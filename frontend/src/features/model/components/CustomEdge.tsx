@@ -92,8 +92,8 @@ export const CustomEdge = ({
           }}
           className="nodrag nopan"
         >
-          {label && (
-            <div style={{
+          <div
+            style={{
               background: 'var(--bg-panel)',
               padding: '4px 8px',
               borderRadius: '4px',
@@ -102,10 +102,18 @@ export const CustomEdge = ({
               color: 'var(--text-primary)',
               border: '1px solid var(--border-color)',
               boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            }}>
-              {label}
-            </div>
-          )}
+              cursor: 'pointer'
+            }}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              const newLabel = window.prompt('가설 라벨을 입력하세요 (예: H1, HA1(매개)):', label as string || '');
+              if (newLabel !== null) {
+                setEdges((eds) => eds.map(edge => edge.id === id ? { ...edge, label: newLabel } : edge));
+              }
+            }}
+          >
+            {label || '라벨 없음'}
+          </div>
           
           <button 
             onClick={onAddJunction}
