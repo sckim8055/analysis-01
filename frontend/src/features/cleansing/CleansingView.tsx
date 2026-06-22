@@ -180,7 +180,7 @@ export const CleansingView: React.FC = () => {
         
         {/* 이상치/결측치 탭 */}
         {activeTab === 'anomalies' && (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, backgroundColor: 'var(--bg-base)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto', minWidth: 0, backgroundColor: 'var(--bg-base)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
             <div style={{ padding: '16px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ margin: 0 }}>이상치 및 결측치 수동 처리</h3>
               <span style={{ color: abnormalCount > 0 ? 'var(--danger)' : 'var(--success)' }}>
@@ -188,26 +188,25 @@ export const CleansingView: React.FC = () => {
               </span>
             </div>
             
-            <div style={{ flex: 1, overflow: 'auto', minWidth: 0, padding: '16px' }}>
+            <div style={{ flex: 1, padding: '16px' }}>
               {abnormalCount === 0 ? (
                 <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
                   <CheckSquare size={48} style={{ color: 'var(--success)', marginBottom: '16px' }} />
                   <p>결측치나 범위를 벗어난 이상치가 발견되지 않았습니다.</p>
                 </div>
               ) : (
-                <div style={{ width: '100%', overflowX: 'auto' }}>
-                  <table style={{ width: 'max-content', borderCollapse: 'collapse', textAlign: 'left' }}>
-                    <thead style={{ position: 'sticky', top: 0, backgroundColor: 'var(--bg-surface)', backdropFilter: 'blur(8px)', borderBottom: '1px solid var(--border-color)', zIndex: 1 }}>
-                      {table.getHeaderGroups().map(headerGroup => (
-                        <tr key={headerGroup.id}>
-                          {headerGroup.headers.map(header => (
-                            <th key={header.id} style={{ padding: '12px', fontWeight: '500', color: 'var(--text-secondary)', borderRight: '1px solid var(--border-color)', minWidth: header.getSize(), whiteSpace: 'nowrap' }}>
-                              {flexRender(header.column.columnDef.header, header.getContext())}
-                            </th>
-                          ))}
-                        </tr>
-                      ))}
-                    </thead>
+                <table style={{ width: 'max-content', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead style={{ position: 'sticky', top: 0, backgroundColor: 'var(--bg-surface)', backdropFilter: 'blur(8px)', borderBottom: '1px solid var(--border-color)', zIndex: 1 }}>
+                    {table.getHeaderGroups().map(headerGroup => (
+                      <tr key={headerGroup.id}>
+                        {headerGroup.headers.map(header => (
+                          <th key={header.id} style={{ padding: '12px', fontWeight: '500', color: 'var(--text-secondary)', borderRight: '1px solid var(--border-color)', minWidth: header.getSize(), whiteSpace: 'nowrap' }}>
+                            {flexRender(header.column.columnDef.header, header.getContext())}
+                          </th>
+                        ))}
+                      </tr>
+                    ))}
+                  </thead>
                   <tbody>
                     {table.getRowModel().rows.map(row => (
                       <tr key={row.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
@@ -220,7 +219,6 @@ export const CleansingView: React.FC = () => {
                     ))}
                   </tbody>
                   </table>
-                </div>
               )}
             </div>
           </div>
