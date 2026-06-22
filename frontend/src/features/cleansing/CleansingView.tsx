@@ -188,26 +188,25 @@ export const CleansingView: React.FC = () => {
               </span>
             </div>
             
-            <div style={{ flex: 1, overflow: 'auto', padding: '16px', position: 'relative' }}>
+            <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
               {abnormalCount === 0 ? (
                 <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
                   <CheckSquare size={48} style={{ color: 'var(--success)', marginBottom: '16px' }} />
                   <p>결측치나 범위를 벗어난 이상치가 발견되지 않았습니다.</p>
                 </div>
               ) : (
-                <div style={{ width: '100%', minWidth: 'max-content' }}>
-                  <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', textAlign: 'left' }}>
-                    <thead style={{ position: 'sticky', top: 0, backgroundColor: 'var(--bg-surface)', backdropFilter: 'blur(8px)', borderBottom: '1px solid var(--border-color)', zIndex: 1 }}>
-                      {table.getHeaderGroups().map(headerGroup => (
-                        <tr key={headerGroup.id}>
-                          {headerGroup.headers.map(header => (
-                            <th key={header.id} style={{ padding: '12px', fontWeight: '500', color: 'var(--text-secondary)', borderRight: '1px solid var(--border-color)', width: header.getSize(), minWidth: header.getSize(), whiteSpace: 'nowrap' }}>
-                              {flexRender(header.column.columnDef.header, header.getContext())}
-                            </th>
-                          ))}
-                        </tr>
-                      ))}
-                    </thead>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead style={{ position: 'sticky', top: 0, backgroundColor: 'var(--bg-surface)', backdropFilter: 'blur(8px)', borderBottom: '1px solid var(--border-color)', zIndex: 1 }}>
+                    {table.getHeaderGroups().map(headerGroup => (
+                      <tr key={headerGroup.id}>
+                        {headerGroup.headers.map(header => (
+                          <th key={header.id} style={{ padding: '12px', fontWeight: '500', color: 'var(--text-secondary)', borderRight: '1px solid var(--border-color)', width: header.getSize() }}>
+                            {flexRender(header.column.columnDef.header, header.getContext())}
+                          </th>
+                        ))}
+                      </tr>
+                    ))}
+                  </thead>
                   <tbody>
                     {table.getRowModel().rows.map(row => (
                       <tr key={row.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
@@ -219,8 +218,7 @@ export const CleansingView: React.FC = () => {
                       </tr>
                     ))}
                   </tbody>
-                  </table>
-                </div>
+                </table>
               )}
             </div>
           </div>
