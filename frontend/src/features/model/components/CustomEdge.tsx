@@ -104,12 +104,22 @@ export const CustomEdge = ({
               boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
               cursor: 'pointer'
             }}
+            onClick={(e) => {
+              // React 18 / ReactFlow 포탈 리렌더링 방지 (이벤트 버블링 차단)
+              e.stopPropagation();
+              e.preventDefault();
+              
+              // 더블 클릭 수동 구현 (더블클릭 이벤트가 무시되는 현상 완벽 차단)
+              if (e.detail === 2) {
+                const newLabel = window.prompt('가설 라벨을 입력하세요 (예: H1, HA1(매개)):', label as string || '');
+                if (newLabel !== null) {
+                  setEdges((eds) => eds.map(edge => edge.id === id ? { ...edge, label: newLabel } : edge));
+                }
+              }
+            }}
             onDoubleClick={(e) => {
               e.stopPropagation();
-              const newLabel = window.prompt('가설 라벨을 입력하세요 (예: H1, HA1(매개)):', label as string || '');
-              if (newLabel !== null) {
-                setEdges((eds) => eds.map(edge => edge.id === id ? { ...edge, label: newLabel } : edge));
-              }
+              e.preventDefault();
             }}
           >
             {label || '라벨 없음'}
