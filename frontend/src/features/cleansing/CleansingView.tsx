@@ -163,7 +163,7 @@ export const CleansingView: React.FC = () => {
 
         <div style={{ display: 'flex', gap: '12px' }}>
           <a 
-            href=`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/data/download` 
+            href={`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/data/download`} 
             download="cleansed_data.xlsx"
             className="btn-secondary" 
             style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}
