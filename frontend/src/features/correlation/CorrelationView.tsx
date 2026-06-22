@@ -75,7 +75,7 @@ export const CorrelationView: React.FC = () => {
     const fetchCorr = async () => {
       setLoading(true);
       try {
-        const res = await fetch('http://localhost:8000/api/analysis/correlation', {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/correlation`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ factors: payload.map(p => ({ name: p.name, items: p.items })) })
@@ -124,7 +124,7 @@ export const CorrelationView: React.FC = () => {
         exportRows.push(rowData);
       }
       
-      const res = await fetch('http://localhost:8000/api/analysis/correlation/export', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/correlation/export`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

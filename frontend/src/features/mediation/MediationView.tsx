@@ -170,7 +170,7 @@ export const MediationView: React.FC = () => {
 
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:8000/api/analysis/mediation', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/mediation`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -221,7 +221,7 @@ export const MediationView: React.FC = () => {
               });
           });
 
-          const res = await fetch('http://localhost:8000/api/analysis/mediation/export', {
+          const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/mediation/export`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -301,7 +301,7 @@ export const MediationView: React.FC = () => {
           models.forEach((m: any) => { rRow[`${m.med_name}_β`] = m.step3.r_squared.toFixed(3); rRow[`${m.med_name}_t`] = ''; rRow[`${m.med_name}_p`] = ''; });
           rows.push(rRow);
 
-          const res = await fetch('http://localhost:8000/api/analysis/mediation/export', {
+          const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/mediation/export`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({

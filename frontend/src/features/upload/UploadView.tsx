@@ -20,7 +20,7 @@ export const UploadView: React.FC = () => {
       formData.append('file', selectedFile);
       
       try {
-        const res = await fetch('http://localhost:8000/api/upload', {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/upload`, {
           method: 'POST',
           body: formData
         });

@@ -96,7 +96,7 @@ export const FactorAnalysisView: React.FC = () => {
         eigenvalue_threshold: factorSettings.eigenvalueThreshold || 1.0
       };
 
-      const response = await fetch('http://localhost:8000/api/analysis/efa', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/efa`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

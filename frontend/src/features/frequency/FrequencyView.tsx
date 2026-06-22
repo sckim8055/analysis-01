@@ -18,7 +18,7 @@ export const FrequencyView: React.FC = () => {
     const fetchFreq = async () => {
       setLoading(true);
       try {
-        const res = await fetch('http://localhost:8000/api/analysis/frequency', {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/frequency`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ columns: demographicColumns })
@@ -47,7 +47,7 @@ export const FrequencyView: React.FC = () => {
   const handleExportExcel = async () => {
     setIsExporting(true);
     try {
-      const res = await fetch('http://localhost:8000/api/analysis/frequency/export', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/frequency/export`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

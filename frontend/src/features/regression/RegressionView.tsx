@@ -226,7 +226,7 @@ export const RegressionView: React.FC = () => {
 
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:8000/api/analysis/regression', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/regression`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -326,7 +326,7 @@ export const RegressionView: React.FC = () => {
             "가설내용": h.desc,
             "채택여부": h.status || ''
         }));
-        const res = await fetch('http://localhost:8000/api/analysis/regression/export', {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/regression/export`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -390,7 +390,7 @@ export const RegressionView: React.FC = () => {
             ? `<표> ${results.ivParentName}이(가) ${results.dvParentName}에 미치는 영향`
             : `<표> ${results.ivParentName}이(가) ${results.models[0].dv_name}에 미치는 영향`;
 
-        const res = await fetch('http://localhost:8000/api/analysis/regression/export', {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/regression/export`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 

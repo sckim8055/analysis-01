@@ -26,7 +26,7 @@ export const CleansingView: React.FC = () => {
 
   const fetchData = () => {
     setIsLoading(true);
-    fetch('http://localhost:8000/api/data/smart', { cache: 'no-store', headers: { 'Pragma': 'no-cache' } })
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/data/smart`, { cache: 'no-store', headers: { 'Pragma': 'no-cache' } })
       .then(res => {
         if (!res.ok) throw new Error('업로드된 데이터가 없거나 서버 에러입니다.');
         return res.json();
@@ -67,7 +67,7 @@ export const CleansingView: React.FC = () => {
 
     // Call API
     try {
-      const res = await fetch('http://localhost:8000/api/data/update_cell', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/data/update_cell`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -103,7 +103,7 @@ export const CleansingView: React.FC = () => {
     }
     setRevLoading(true);
     try {
-      const res = await fetch('http://localhost:8000/api/data/reverse_code', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/data/reverse_code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -163,7 +163,7 @@ export const CleansingView: React.FC = () => {
 
         <div style={{ display: 'flex', gap: '12px' }}>
           <a 
-            href="http://localhost:8000/api/data/download" 
+            href=`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/data/download` 
             download="cleansed_data.xlsx"
             className="btn-secondary" 
             style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}

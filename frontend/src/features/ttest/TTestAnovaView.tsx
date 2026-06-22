@@ -65,7 +65,7 @@ export const TTestAnovaView: React.FC = () => {
 
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:8000/api/analysis/difference', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/difference`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -97,7 +97,7 @@ export const TTestAnovaView: React.FC = () => {
         "표준편차(SD)": s.sd.toFixed(3)
       }));
       
-      const res = await fetch('http://localhost:8000/api/analysis/difference/export', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/difference/export`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -172,7 +172,7 @@ export const TTestAnovaView: React.FC = () => {
         exportRows.push(tfRow);
       });
       
-      const res = await fetch('http://localhost:8000/api/analysis/difference/export', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/difference/export`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

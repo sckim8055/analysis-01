@@ -14,7 +14,7 @@ export const ReportView: React.FC = () => {
     setIsExporting(true);
     try {
       // API call to backend to generate report
-      const response = await fetch('http://localhost:8000/api/analysis/full-report', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/full-report`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
