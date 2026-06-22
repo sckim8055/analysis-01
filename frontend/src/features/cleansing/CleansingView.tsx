@@ -200,7 +200,7 @@ export const CleansingView: React.FC = () => {
                     {table.getHeaderGroups().map(headerGroup => (
                       <tr key={headerGroup.id}>
                         {headerGroup.headers.map(header => (
-                          <th key={header.id} style={{ padding: '12px', fontWeight: '500', color: 'var(--text-secondary)', borderRight: '1px solid var(--border-color)', width: header.getSize() }}>
+                          <th key={header.id} style={{ padding: '12px', fontWeight: '500', color: 'var(--text-secondary)', borderRight: '1px solid var(--border-color)', width: header.getSize(), whiteSpace: 'nowrap' }}>
                             {flexRender(header.column.columnDef.header, header.getContext())}
                           </th>
                         ))}
@@ -211,7 +211,7 @@ export const CleansingView: React.FC = () => {
                     {table.getRowModel().rows.map(row => (
                       <tr key={row.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                         {row.getVisibleCells().map(cell => (
-                          <td key={cell.id} style={{ padding: '8px', borderRight: '1px solid var(--border-color)' }}>
+                          <td key={cell.id} style={{ padding: '8px', borderRight: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                           </td>
                         ))}
