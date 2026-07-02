@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useUiStore } from '../../store/uiStore';
 import { useProjectStore } from '../../store/projectStore';
+import { useAnalysisStore } from '../../store/analysisStore';
 import { CheckSquare, Users, GitMerge, Trash2, History } from 'lucide-react';
 
 export const DemographicsView: React.FC = () => {
   const { setCurrentStep } = useUiStore();
   const { originalColumns, demographicColumns, setDemographicColumns, recodeLogs, addRecodeLog } = useProjectStore();
+  const addAuditLog = useAnalysisStore(state => state.addAuditLog);
   
   const [selectedCols, setSelectedCols] = useState<string[]>(demographicColumns || []);
   const [frequencies, setFrequencies] = useState<Record<string, any[]>>({});
@@ -91,6 +93,12 @@ export const DemographicsView: React.FC = () => {
           message: `'${catsToMerge.join(', ')}' ➔ '${targetName}'`
         });
         
+        addAuditLog({
+          step: '인구통계 설정',
+          action: '카테고리 병합',
+          details: { column: col, oldValues: catsToMerge, newValue: targetName }
+        });
+        
         setMergeName('');
         setSelectedCategories({ ...selectedCategories, [col]: [] });
         // Refresh frequency
@@ -132,6 +140,12 @@ export const DemographicsView: React.FC = () => {
           message: `'${catsToDrop.join(', ')}' 제외 완료 (현재 N=${result.new_total_rows})`
         });
 
+        addAuditLog({
+          step: '인구통계 설정',
+          action: '카테고리 제외',
+          details: { column: col, valuesDropped: catsToDrop, newTotalRows: result.new_total_rows }
+        });
+
         setSelectedCategories({ ...selectedCategories, [col]: [] });
         // Refresh frequency
         await fetchFrequencies(selectedCols);
@@ -168,6 +182,11 @@ export const DemographicsView: React.FC = () => {
             className="btn-primary" 
             style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
             onClick={() => {
+              addAuditLog({
+                step: '인구통계 설정',
+                action: '인구통계 컬럼 지정',
+                details: { columns: selectedCols }
+              });
               setDemographicColumns(selectedCols);
               setCurrentStep('mapping');
             }}

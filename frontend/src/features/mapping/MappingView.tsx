@@ -148,7 +148,14 @@ export const MappingView: React.FC = () => {
           <button 
             className="btn-primary" 
             style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-            onClick={() => setCurrentStep('factor')}
+            onClick={() => {
+              useAnalysisStore.getState().addAuditLog({
+                step: '변수 매핑',
+                action: '변수 매핑 완료',
+                details: { mappedVars }
+              });
+              setCurrentStep('factor');
+            }}
           >
             <CheckSquare size={18} /> 매핑 완료 (요인분석 이동) ▶
           </button>

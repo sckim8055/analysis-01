@@ -432,9 +432,7 @@ export const MediationView: React.FC = () => {
           </span>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
-            <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => window.print()}>
-              화면 인쇄 (PDF)
-            </button>
+            
             <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => setCurrentStep('moderation')}>
               조절효과 분석으로 이동 ▶
             </button>
@@ -645,6 +643,16 @@ export const MediationView: React.FC = () => {
                                                 {models.map((m: any) => (
                                                     <td colSpan={3} key={m.med_name} style={{ padding: '8px', borderLeft: '1px solid var(--border-color)', textAlign: 'left', fontSize: '12px', lineHeight: '1.5' }}>
                                                         {m.adoptions.map((a: any) => <div key={a.iv}>- {a.iv} ({a.status})</div>)}
+                                                    </td>
+                                                ))}
+                                            </tr>
+                                            <tr style={{ borderTop: '1px solid var(--border-color)' }}>
+                                                <td colSpan={2} style={{ padding: '8px', borderRight: '1px solid var(--border-color)' }}>Sobel Test<br/>(Z값, p-value)</td>
+                                                {models.map((m: any) => (
+                                                    <td colSpan={3} key={m.med_name} style={{ padding: '8px', borderLeft: '1px solid var(--border-color)', textAlign: 'left', fontSize: '12px', lineHeight: '1.5' }}>
+                                                        {m.indirect_effects && m.indirect_effects.map((ie: any) => (
+                                                            <div key={ie.iv}>- {ie.iv}: Z={ie.sobel_z.toFixed(3)}, p={ie.sobel_p < 0.001 ? '<.001' : ie.sobel_p.toFixed(3)}</div>
+                                                        ))}
                                                     </td>
                                                 ))}
                                             </tr>

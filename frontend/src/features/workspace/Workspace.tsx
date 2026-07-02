@@ -13,6 +13,8 @@ import { CorrelationView } from '../correlation/CorrelationView';
 import { TTestAnovaView } from '../ttest/TTestAnovaView';
 import { RegressionView } from '../regression/RegressionView';
 import { MediationView } from '../mediation/MediationView';
+import { ModerationView } from '../mediation/ModerationView';
+import { ModeratedMediationView } from '../mediation/ModeratedMediationView';
 import { ReportView } from '../report/ReportView';
 
 // 임시 뷰 컴포넌트들
@@ -33,10 +35,11 @@ export const Workspace: React.FC = () => {
       case 'reliability': return <ReliabilityView />;
       case 'correlation': return <CorrelationView />;
       case 'ttest': return <TTestAnovaView />;
-      case 'anova': return <EmptyView name="분산분석(ANOVA)" />;
+      case 'anova': return <TTestAnovaView />;
       case 'regression': return <RegressionView />;
       case 'mediation': return <MediationView />;
-      case 'moderation': return <EmptyView name="조절효과 분석" />;
+      case 'moderation': return <ModerationView />;
+      case 'moderated_mediation': return <ModeratedMediationView />;
       case 'report': return <ReportView />;
       default: return <EmptyView name="알 수 없는" />;
     }

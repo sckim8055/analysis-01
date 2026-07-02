@@ -3,7 +3,9 @@ import numpy as np
 import statsmodels.api as sm
 from scipy import stats
 
-def run_mediation_analysis(df, ivs_data, med_data, dv_data, n_boot=5000):
+def run_mediation_analysis(df, ivs_data, med_data, dv_data, n_boot=5000, seed=None):
+    # seed가 지정되면 Bootstrap이 재현 가능(동일 CI), None이면 매번 무작위
+    rng = np.random.default_rng(seed)
     df_clean = df.copy()
     
     # Create IV columns
@@ -126,7 +128,7 @@ def run_mediation_analysis(df, ivs_data, med_data, dv_data, n_boot=5000):
     
     if n_boot > 0:
         for _ in range(n_boot):
-            indices = np.random.choice(n, n, replace=True)
+            indices = rng.choice(n, n, replace=True)
             df_boot = df_clean.iloc[indices]
             
             X1_b = sm.add_constant(df_boot[iv_cols])

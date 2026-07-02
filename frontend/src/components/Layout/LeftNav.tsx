@@ -23,6 +23,7 @@ const navItems = [
   { id: 'regression', label: '회귀분석', icon: LineChart },
   { id: 'mediation', label: '매개분석', icon: Network },
   { id: 'moderation', label: '조절분석', icon: Settings2 },
+  { id: 'moderated_mediation', label: '조절된매개', icon: Settings2 },
   { divider: true, id: 'd2' },
   { id: 'report', label: '전체보고서', icon: FileText },
 ];

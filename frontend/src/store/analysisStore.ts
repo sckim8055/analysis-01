@@ -2,6 +2,14 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Variable, VarType, FactorSettings } from '../types';
 
+export interface AuditLog {
+  id: string;
+  timestamp: string;
+  step: string;
+  action: string;
+  details: any;
+}
+
 interface AnalysisState {
   // Mapping State
   mappedVars: Record<VarType, Variable[]>;
@@ -32,6 +40,13 @@ interface AnalysisState {
   savedModelEdges: any[];
   saveModel: (nodes: any[], edges: any[]) => void;
   
+  // Audit Trail & Cache for Full Report
+  auditLogs: AuditLog[];
+  addAuditLog: (log: Omit<AuditLog, 'id' | 'timestamp'>) => void;
+  
+  cachedResults: Record<string, { results: any; settings: any; interpretation: string }>;
+  setCachedResult: (step: string, data: { results: any; settings?: any; interpretation?: string }) => void;
+
   // Reset entire analysis state (e.g. on new file upload)
   resetStore: () => void;
 }
@@ -106,6 +121,26 @@ export const useAnalysisStore = create<AnalysisState>()(
       savedModelEdges: [],
       saveModel: (nodes, edges) => set({ savedModelNodes: nodes, savedModelEdges: edges }),
       
+      auditLogs: [],
+      addAuditLog: (log) => set((state) => ({
+        auditLogs: [...state.auditLogs, {
+          ...log,
+          id: Math.random().toString(36).substr(2, 9),
+          timestamp: new Date().toISOString()
+        }]
+      })),
+
+      cachedResults: {},
+      setCachedResult: (step, data) => set((state) => ({
+        cachedResults: {
+          ...state.cachedResults,
+          [step]: {
+            ...state.cachedResults[step],
+            ...data
+          }
+        }
+      })),
+      
       resetStore: () => set({
         mappedVars: { iv: [], dv: [], med: [], mod: [], gen: [] },
         factorSettings: {
@@ -119,6 +154,8 @@ export const useAnalysisStore = create<AnalysisState>()(
         triggerFactorAnalysis: 0,
         savedModelNodes: [],
         savedModelEdges: [],
+        auditLogs: [],
+        cachedResults: {},
       }),
     }),
     {

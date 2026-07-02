@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
 import { useUiStore } from '../../store/uiStore';
 import { useProjectStore } from '../../store/projectStore';
+import { useAnalysisStore } from '../../store/analysisStore';
 import { AlertTriangle, ArrowLeftRight, CheckSquare } from 'lucide-react';
 import { EditableCell } from './components/EditableCell';
 
 export const CleansingView: React.FC = () => {
   const { setCurrentStep } = useUiStore();
   const { originalColumns, demographicColumns } = useProjectStore();
+  const addAuditLog = useAnalysisStore(state => state.addAuditLog);
   
   const [activeTab, setActiveTab] = useState<'anomalies' | 'reverse'>('anomalies');
   
@@ -55,6 +57,15 @@ export const CleansingView: React.FC = () => {
   }, []);
 
   const updateData = async (rowId: number, columnId: string, value: any) => {
+    const rowToUpdate = data.find(r => r.id === rowId);
+    const oldValue = rowToUpdate ? rowToUpdate[columnId] : null;
+
+    addAuditLog({
+      step: '데이터 전처리',
+      action: oldValue === null || oldValue === '' ? '결측치 수정' : '셀 값 수정',
+      details: { rowId, columnId, oldValue, newValue: value }
+    });
+
     // Optimistic UI update
     setData(old =>
       old.map((row, index) => {
@@ -113,6 +124,13 @@ export const CleansingView: React.FC = () => {
         })
       });
       if (!res.ok) throw new Error('역코딩 실패');
+      
+      addAuditLog({
+        step: '데이터 전처리',
+        action: '역코딩 적용',
+        details: { columns: revSelectedCols, min: revMin, max: revMax }
+      });
+
       alert('역코딩이 성공적으로 적용되었습니다.');
       setRevSelectedCols([]);
       fetchData(); // reload anomalies

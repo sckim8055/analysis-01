@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useUiStore } from '../../store/uiStore';
 import { useProjectStore } from '../../store/projectStore';
+import { useAnalysisStore } from '../../store/analysisStore';
 import { Download, FileText } from 'lucide-react';
 
 export const FrequencyView: React.FC = () => {
@@ -113,6 +114,16 @@ export const FrequencyView: React.FC = () => {
     
     return text.trim();
   };
+
+  useEffect(() => {
+    if (results && Object.keys(results).length > 0) {
+      useAnalysisStore.getState().setCachedResult('frequency', {
+        results,
+        settings: { totalN },
+        interpretation: generateInterpretation()
+      });
+    }
+  }, [results, totalN]);
 
   if (!demographicColumns || demographicColumns.length === 0) {
     return (

@@ -1,7 +1,18 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
+import math
 import pandas as pd
+
+def sanitize_float(val, default=0.0):
+    try:
+        f = float(val)
+        if math.isnan(f) or math.isinf(f):
+            return default
+        return f
+    except:
+        return default
+
 import numpy as np
 import os
 from factor_analyzer import FactorAnalyzer
@@ -16,12 +27,23 @@ class EFARequest(BaseModel):
     extraction: Optional[str] = "minres" # minres, ml, principal
     eigenvalue_threshold: Optional[float] = 1.0
 
+class VarianceExplained(BaseModel):
+    factor: str
+    ss_loadings: float      # 회전 후 적재제곱합 (SPSS: Rotation Sums of Squared Loadings, Total)
+    variance_pct: float     # 설명 분산 비율 (%)
+    cumulative_pct: float   # 누적 분산 비율 (%)
+
 class EFAResponse(BaseModel):
     kmo: float
+    bartlett_chi_square: float
+    bartlett_df: int
     bartlett_p_value: float
     n_factors: int
     eigenvalues: List[float]
     loadings: Dict[str, Dict[str, float]]
+    communalities: Dict[str, float]
+    variance_explained: List[VarianceExplained]
+    total_variance: float
     suggested_mapping: Dict[str, List[str]]
 
 @router.post("/efa", response_model=EFAResponse)
@@ -54,10 +76,14 @@ async def perform_efa(request: EFARequest):
         except Exception:
             kmo_value = 0.0
             
+        k_vars = len(df_selected.columns)
+        bartlett_df = int(k_vars * (k_vars - 1) / 2)
         try:
             chi_square_value, p_value = calculate_bartlett_sphericity(df_selected)
+            bartlett_chi_square = float(chi_square_value) if not pd.isna(chi_square_value) else 0.0
             bartlett_p_value = float(p_value) if not pd.isna(p_value) else 1.0
         except Exception:
+            bartlett_chi_square = 0.0
             bartlett_p_value = 1.0
 
         # 3. 요인 수 결정 (Eigenvalue 기준)
@@ -90,9 +116,29 @@ async def perform_efa(request: EFARequest):
         
         fa = FactorAnalyzer(n_factors=n_factors, rotation=rot, method=request.extraction)
         fa.fit(df_selected)
-        
+
         loadings_matrix = fa.loadings_
-        
+
+        # 공통성(Communality) — 각 항목이 추출된 요인들로 설명되는 비율
+        communalities_arr = fa.get_communalities()
+        communalities_dict = {
+            col: round(float(communalities_arr[idx]), 3)
+            for idx, col in enumerate(request.columns)
+        }
+
+        # 분산설명력 — 회전 후 적재제곱합 / 설명비율 / 누적비율 (SPSS Total Variance Explained)
+        ss_loadings, prop_var, cum_var = fa.get_factor_variance()
+        variance_explained = [
+            VarianceExplained(
+                factor=f"Factor {f_idx+1}",
+                ss_loadings=round(float(ss_loadings[f_idx]), 3),
+                variance_pct=round(float(prop_var[f_idx]) * 100, 2),
+                cumulative_pct=round(float(cum_var[f_idx]) * 100, 2),
+            )
+            for f_idx in range(n_factors)
+        ]
+        total_variance = round(float(cum_var[-1]) * 100, 2) if n_factors > 0 else 0.0
+
         # 5. 결과 포맷팅
         loadings_dict = {}
         suggested_mapping = {f"Factor {i+1}": [] for i in range(n_factors)}
@@ -122,10 +168,15 @@ async def perform_efa(request: EFARequest):
 
         return EFAResponse(
             kmo=round(kmo_value, 3),
+            bartlett_chi_square=round(bartlett_chi_square, 3),
+            bartlett_df=bartlett_df,
             bartlett_p_value=round(bartlett_p_value, 4),
             n_factors=n_factors,
             eigenvalues=[round(e, 3) for e in eigenvalues],
             loadings=loadings_dict,
+            communalities=communalities_dict,
+            variance_explained=variance_explained,
+            total_variance=total_variance,
             suggested_mapping=suggested_mapping
         )
         
@@ -458,6 +509,8 @@ class DiffTestResult(BaseModel):
     p_value: float
     groups: List[DiffGroupStat]
     posthoc: Optional[str] = None
+    levene_p: Optional[float] = None      # Levene 등분산 검정 p값 (SPSS와 동일)
+    variance_equal: Optional[bool] = None # True=등분산 가정(Student/F), False=이분산(Welch)
 
 class DemographicsDiffResult(BaseModel):
     demographic: str
@@ -473,8 +526,37 @@ class DifferenceResponse(BaseModel):
     desc_stats: List[DescStat]
     diff_results: List[DemographicsDiffResult]
 
+import traceback
+import math
+
+def check_nan(obj):
+    if isinstance(obj, float) and math.isnan(obj):
+        return True
+    if isinstance(obj, dict):
+        return any(check_nan(v) for v in obj.values())
+    if isinstance(obj, list):
+        return any(check_nan(v) for v in obj)
+    if hasattr(obj, "__dict__"):
+        return check_nan(obj.__dict__)
+    return False
+
 @router.post("/difference", response_model=DifferenceResponse)
 async def perform_difference(request: DifferenceRequest):
+    try:
+        res = await _perform_difference(request)
+        if check_nan(res):
+            with open("error.log", "w") as f:
+                f.write("NaN detected in response!\n")
+                import json
+                # try to dump, it will fail or show where
+                f.write(str(res))
+        return res
+    except Exception as e:
+        with open("error.log", "w") as f:
+            f.write(traceback.format_exc())
+        raise e
+
+async def _perform_difference(request: DifferenceRequest):
     file_path = "data/uploaded_data.csv"
     if not os.path.exists(file_path):
         raise HTTPException(status_code=400, detail="데이터 파일이 없습니다.")
@@ -498,7 +580,7 @@ async def perform_difference(request: DifferenceRequest):
         if factor.name in df_means.columns:
             m = df_means[factor.name].mean()
             sd = df_means[factor.name].std()
-            desc_stats.append(DescStat(name=factor.name, parent=factor.parent, mean=round(float(m), 3), sd=round(float(sd), 3)))
+            desc_stats.append(DescStat(name=factor.name, parent=factor.parent, mean=round(sanitize_float(m), 3), sd=round(sanitize_float(sd), 3)))
             
     # 2. Difference Tests by Demographics
     diff_results = []
@@ -524,33 +606,59 @@ async def perform_difference(request: DifferenceRequest):
                 g_df = valid_df[valid_df['group'] == g]
                 group_stats.append(DiffGroupStat(
                     group_name=str(g),
-                    mean=round(float(g_df['val'].mean()), 3),
-                    sd=round(float(g_df['val'].std()), 3)
+                    mean=round(sanitize_float(g_df['val'].mean()), 3),
+                    sd=round(sanitize_float(g_df['val'].std()), 3)
                 ))
             
             group_data = [valid_df[valid_df['group'] == g]['val'].values for g in groups]
             
             if len(groups) == 2:
-                # T-test
-                t_stat, p_val = stats.ttest_ind(group_data[0], group_data[1], equal_var=False)
-                
+                # T-test: Levene 등분산 검정으로 SPSS와 동일하게 분기
+                # SPSS는 평균중심(center='mean') Levene을 사용 (scipy 기본은 median이므로 명시)
+                try:
+                    _, levene_p = stats.levene(group_data[0], group_data[1], center='mean')
+                    levene_p = sanitize_float(levene_p)
+                except Exception:
+                    levene_p = 1.0
+                variance_equal = levene_p >= 0.05  # 등분산이면 Student-t, 아니면 Welch
+                t_stat, p_val = stats.ttest_ind(group_data[0], group_data[1], equal_var=variance_equal)
+
                 if request.bootstrap_n and request.bootstrap_n > 0:
                     try:
-                        res = stats.permutation_test((group_data[0], group_data[1]), lambda x, y: stats.ttest_ind(x, y, equal_var=False)[0], n_resamples=request.bootstrap_n, alternative='two-sided')
+                        res = stats.permutation_test((group_data[0], group_data[1]), lambda x, y: stats.ttest_ind(x, y, equal_var=variance_equal)[0], n_resamples=request.bootstrap_n, alternative='two-sided')
                         p_val = res.pvalue
                     except:
                         pass
-                        
+
                 factors_res[factor.name] = DiffTestResult(
                     test_type='t',
-                    statistic=round(float(t_stat), 3),
-                    p_value=float(p_val),
-                    groups=group_stats
+                    statistic=round(sanitize_float(t_stat), 3),
+                    p_value=sanitize_float(p_val),
+                    groups=group_stats,
+                    levene_p=round(levene_p, 4),
+                    variance_equal=variance_equal
                 )
             elif len(groups) > 2:
-                # ANOVA
-                f_stat, p_val = stats.f_oneway(*group_data)
-                
+                # ANOVA: Levene 등분산 검정으로 SPSS와 동일하게 분기
+                try:
+                    _, levene_p = stats.levene(*group_data, center='mean')
+                    levene_p = sanitize_float(levene_p)
+                except Exception:
+                    levene_p = 1.0
+                variance_equal = levene_p >= 0.05
+
+                if variance_equal:
+                    # 등분산 → 일반 일원배치 ANOVA (SPSS One-way ANOVA F)
+                    f_stat, p_val = stats.f_oneway(*group_data)
+                else:
+                    # 이분산 → Welch's ANOVA (SPSS Welch 통계량)
+                    try:
+                        wa = pg.welch_anova(data=valid_df, dv='val', between='group')
+                        f_stat = sanitize_float(wa['F'].values[0])
+                        p_val = sanitize_float(wa['p-unc'].values[0])
+                    except Exception:
+                        f_stat, p_val = stats.f_oneway(*group_data)
+
                 if request.bootstrap_n and request.bootstrap_n > 0:
                     try:
                         # For F-oneway permutation test, we can use a custom function
@@ -560,43 +668,52 @@ async def perform_difference(request: DifferenceRequest):
                         p_val = res.pvalue
                     except:
                         pass
-                
+
                 posthoc_str = None
                 if request.use_scheffe and p_val < 0.05:
                     try:
-                        import scikit_posthocs as sp
-                        # prepare data for scikit_posthocs
-                        data_arr = []
-                        group_arr = []
-                        for i, g in enumerate(groups):
-                            data_arr.extend(group_data[i])
-                            group_arr.extend([g] * len(group_data[i]))
-                        posthoc_res = sp.posthoc_scheffe(data_arr, groups=group_arr)
-                        # Find significant pairs
                         sig_pairs = []
-                        for i in range(len(groups)):
-                            for j in range(i+1, len(groups)):
-                                g1 = groups[i]
-                                g2 = groups[j]
-                                if posthoc_res.loc[g1, g2] < 0.05:
-                                    m1 = np.mean(group_data[i])
-                                    m2 = np.mean(group_data[j])
-                                    if m1 > m2:
-                                        sig_pairs.append(f"{g1} > {g2}")
-                                    else:
-                                        sig_pairs.append(f"{g2} > {g1}")
+                        if variance_equal:
+                            # 등분산 → Scheffé 사후검정
+                            import scikit_posthocs as sp
+                            data_arr = []
+                            group_arr = []
+                            for i, g in enumerate(groups):
+                                data_arr.extend(group_data[i])
+                                group_arr.extend([g] * len(group_data[i]))
+                            posthoc_res = sp.posthoc_scheffe(data_arr, groups=group_arr)
+                            for i in range(len(groups)):
+                                for j in range(i+1, len(groups)):
+                                    g1 = groups[i]
+                                    g2 = groups[j]
+                                    if posthoc_res.loc[g1, g2] < 0.05:
+                                        m1 = np.mean(group_data[i])
+                                        m2 = np.mean(group_data[j])
+                                        sig_pairs.append(f"{g1} > {g2}" if m1 > m2 else f"{g2} > {g1}")
+                        else:
+                            # 이분산 → Games-Howell 사후검정 (SPSS 권장)
+                            gh = pg.pairwise_gameshowell(data=valid_df, dv='val', between='group')
+                            pcol = 'pval' if 'pval' in gh.columns else 'p-tukey'
+                            for _, row in gh.iterrows():
+                                if row[pcol] < 0.05:
+                                    g1, g2 = row['A'], row['B']
+                                    m1 = np.mean(valid_df[valid_df['group'] == g1]['val'])
+                                    m2 = np.mean(valid_df[valid_df['group'] == g2]['val'])
+                                    sig_pairs.append(f"{g1} > {g2}" if m1 > m2 else f"{g2} > {g1}")
                         if sig_pairs:
                             posthoc_str = ", ".join(sig_pairs)
                     except Exception as e:
-                        print("Scheffe Error:", e)
+                        print("Posthoc Error:", e)
                         pass
-                
+
                 factors_res[factor.name] = DiffTestResult(
                     test_type='F',
-                    statistic=round(float(f_stat), 3),
-                    p_value=float(p_val),
+                    statistic=round(sanitize_float(f_stat), 3),
+                    p_value=sanitize_float(p_val),
                     groups=group_stats,
-                    posthoc=posthoc_str
+                    posthoc=posthoc_str,
+                    levene_p=round(levene_p, 4),
+                    variance_equal=variance_equal
                 )
         
         diff_results.append(DemographicsDiffResult(
@@ -787,6 +904,7 @@ async def export_regression(request: RegressionExportRequest):
 
 # --- Mediation Analysis ---
 from .mediation_utils import run_mediation_analysis
+from .process_macro_utils import run_moderation_analysis, run_moderated_mediation
 
 class MediationVarPayload(BaseModel):
     name: str
@@ -799,7 +917,10 @@ class MediationRequest(BaseModel):
     ivs: List[MediationVarPayload]
     meds: List[MediationVarPayload]
     dvs: List[MediationVarPayload]
+    mods: List[MediationVarPayload] = []
+    analysis_type: str = "mediation" # "mediation", "moderation", "moderated_mediation" 
     n_boot: int = 5000
+    seed: Optional[int] = None  # Bootstrap 재현용 시드 (지정 시 매번 동일한 CI)
 
 @router.post("/mediation")
 async def perform_mediation(request: MediationRequest):
@@ -813,31 +934,59 @@ async def perform_mediation(request: MediationRequest):
         ivs_data = [{"name": iv.name, "items": iv.items} for iv in request.ivs]
         
         all_results = []
-        for dv in request.dvs:
-            dv_data = {"name": dv.name, "items": dv.items}
-            med_models = []
+        
+        if request.analysis_type == "moderation":
+            for dv in request.dvs:
+                dv_data = {"name": dv.name, "items": dv.items}
+                for mod in request.mods:
+                    mod_data = {"name": mod.name, "items": mod.items}
+                    res = run_moderation_analysis(df, ivs_data, mod_data, dv_data)
+                    res["dv_name"] = dv.name
+                    res["mod_name"] = mod.name
+                    all_results.append(res)
+            return {"results": all_results}
             
-            for med in request.meds:
-                med_data = {"name": med.name, "items": med.items}
-                res = run_mediation_analysis(
-                    df=df, 
-                    ivs_data=ivs_data, 
-                    med_data=med_data, 
-                    dv_data=dv_data, 
-                    n_boot=request.n_boot
-                )
-                res['med_name'] = med.name
-                med_models.append(res)
+        elif request.analysis_type == "moderated_mediation":
+            for dv in request.dvs:
+                dv_data = {"name": dv.name, "items": dv.items}
+                for med in request.meds:
+                    med_data = {"name": med.name, "items": med.items}
+                    for mod in request.mods:
+                        mod_data = {"name": mod.name, "items": mod.items}
+                        res = run_moderated_mediation(df, ivs_data[0], med_data, mod_data, dv_data, n_boot=request.n_boot, seed=request.seed)
+                        res["dv_name"] = dv.name
+                        res["med_name"] = med.name
+                        res["mod_name"] = mod.name
+                        all_results.append(res)
+            return {"results": all_results}
+            
+        else: # Classic mediation
+            for dv in request.dvs:
+                dv_data = {"name": dv.name, "items": dv.items}
+                med_models = []
                 
-            all_results.append({
-                "dv_name": dv.name,
-                "models": med_models
-            })
-            
-        if not all_results:
-            raise HTTPException(status_code=400, detail="매개효과 분석을 수행할 수 없습니다.")
-            
-        return {"results": all_results}
+                for med in request.meds:
+                    med_data = {"name": med.name, "items": med.items}
+                    res = run_mediation_analysis(
+                        df=df,
+                        ivs_data=ivs_data,
+                        med_data=med_data,
+                        dv_data=dv_data,
+                        n_boot=request.n_boot,
+                        seed=request.seed
+                    )
+                    res['med_name'] = med.name
+                    med_models.append(res)
+                    
+                all_results.append({
+                    "dv_name": dv.name,
+                    "models": med_models
+                })
+                
+            if not all_results:
+                raise HTTPException(status_code=400, detail="매개효과 분석을 수행할 수 없습니다.")
+                
+            return {"results": all_results}
     except Exception as e:
         import traceback
         traceback.print_exc()

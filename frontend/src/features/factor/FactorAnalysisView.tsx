@@ -338,18 +338,41 @@ export const FactorAnalysisView: React.FC = () => {
                     </div>
                     {isApproved && <Check size={14} color="var(--success)" />}
                   </div>
-                  {/* 하위 요인 트리 표시 */}
-                  {v.subFactors && v.subFactors.length > 0 && (
-                    <div style={{ marginLeft: '18px', borderLeft: '1px solid var(--border-light)', paddingLeft: '8px', marginTop: '4px' }}>
-                      {v.subFactors.map(sf => (
-                        <div key={sf.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                          <Layers size={12} />
-                          <span>{sf.name}</span>
-                          <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>({sf.itemIds?.length || 0})</span>
+                  {/* 하위 요인 및 문항 트리 표시 */}
+                  <div style={{ marginLeft: '18px', borderLeft: '1px solid var(--border-light)', paddingLeft: '8px', marginTop: '4px' }}>
+                    {v.subFactors && v.subFactors.length > 0 ? (
+                      v.subFactors.map(sf => (
+                        <div key={sf.id} style={{ marginBottom: '6px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                            <Layers size={12} />
+                            <span>{sf.name}</span>
+                            <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>({sf.itemIds?.length || 0})</span>
+                          </div>
+                          {/* 하위 요인에 속한 문항들 */}
+                          {sf.itemIds && sf.itemIds.length > 0 && (
+                            <div style={{ marginLeft: '16px', paddingLeft: '8px', borderLeft: '1px dashed var(--border-color)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                              {sf.itemIds.map((itemId, idx) => (
+                                <div key={idx} style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                  - {getOriginalName(itemId)}
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      ))
+                    ) : (
+                      // 하위 요인이 없을 경우 변수에 직속된 문항들 표시
+                      v.itemIds && v.itemIds.length > 0 && (
+                        <div style={{ marginLeft: '6px', paddingLeft: '8px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          {v.itemIds.map((itemId, idx) => (
+                            <div key={idx} style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                              - {getOriginalName(itemId)}
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    )}
+                  </div>
                 </div>
               );
             })}

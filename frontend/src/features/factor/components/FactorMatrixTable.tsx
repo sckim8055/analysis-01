@@ -10,12 +10,15 @@ interface FactorMatrixTableProps {
   hideSmallCoefficients: boolean;
   smallCoefficientThreshold: number;
   loadingThreshold: number;
+  communalities?: Record<string, number>;
 }
 
 export const FactorMatrixTable: React.FC<FactorMatrixTableProps> = ({
-  factorNames, matrixItems, getOriginalName, 
-  hideSmallCoefficients, smallCoefficientThreshold, loadingThreshold
+  factorNames, matrixItems, getOriginalName,
+  hideSmallCoefficients, smallCoefficientThreshold, loadingThreshold,
+  communalities
 }) => {
+  const showCommunality = communalities && Object.keys(communalities).length > 0;
   return (
     <div style={{ marginBottom: '20px' }}>
       <h4 className="text-body" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', paddingBottom: '8px', borderBottom: '2px solid var(--accent-light)' }}>
@@ -30,6 +33,9 @@ export const FactorMatrixTable: React.FC<FactorMatrixTableProps> = ({
               {factorNames.map(name => (
                 <th key={name} style={{ padding: '8px', fontWeight: 'normal' }}>{name}</th>
               ))}
+              {showCommunality && (
+                <th style={{ padding: '8px', fontWeight: 'normal', borderLeft: '1px solid var(--border-color)' }}>공통성</th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -49,6 +55,13 @@ export const FactorMatrixTable: React.FC<FactorMatrixTableProps> = ({
                     </td>
                   );
                 })}
+                {showCommunality && (
+                  <td style={{ padding: '8px', color: 'var(--text-secondary)', borderLeft: '1px solid var(--border-color)' }}>
+                    {communalities![getOriginalName(item.id)] !== undefined
+                      ? formatStatNumber(communalities![getOriginalName(item.id)])
+                      : ''}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

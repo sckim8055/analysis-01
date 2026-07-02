@@ -27,7 +27,9 @@ export const ReportView: React.FC = () => {
             excludedItems: analysisState.excludedItems,
             factorResults: analysisState.factorResults,
             savedModelEdges: analysisState.savedModelEdges,
-          }
+          },
+          auditLogs: analysisState.auditLogs,
+          cachedResults: analysisState.cachedResults
         }),
       });
 

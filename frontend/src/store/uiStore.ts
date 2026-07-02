@@ -37,7 +37,7 @@ export const useUiStore = create<UiState>()(
       setCurrentStep: (step) => set({ 
         currentStep: step,
         // 분석 단계 전환 시 기본적으로 Flyout을 열어 분석 옵션을 보여줌
-        isFlyoutOpen: ['frequency', 'factor', 'reliability', 'correlation', 'ttest', 'anova', 'regression', 'mediation', 'moderation'].includes(step) 
+        isFlyoutOpen: ['frequency', 'factor', 'reliability', 'correlation', 'ttest', 'anova', 'regression', 'mediation', 'moderation', 'moderated_mediation'].includes(step) 
       }),
       
       toggleFlyout: () => set((state) => ({ isFlyoutOpen: !state.isFlyoutOpen })),
