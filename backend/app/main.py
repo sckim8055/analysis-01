@@ -35,3 +35,4 @@ app.include_router(hypotheses.router)
 @app.get("/")
 def read_root():
     return {"message": "Welcome to Research Analyzer API"}
+# force reload
