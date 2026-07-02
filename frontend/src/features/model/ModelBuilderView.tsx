@@ -119,7 +119,7 @@ export const ModelBuilderView: React.FC = () => {
     const med = 'var(--var-med)';
     const mod = 'var(--var-mod)';
     const line = 'var(--border-dark)';
-    const textStyle = { fill: 'white', fontSize: '9px', fontWeight: 'bold', textAnchor: 'middle', alignmentBaseline: 'central' };
+    const textStyle = { fill: 'white', fontSize: '9px', fontWeight: 'bold', textAnchor: 'middle' as any, alignmentBaseline: 'central' as any };
 
     const svgWrapper = (children: React.ReactNode) => (
       <svg width="100%" height="100%" viewBox="0 0 100 60" preserveAspectRatio="xMidYMid meet">

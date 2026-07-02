@@ -250,8 +250,7 @@ export const ModerationView: React.FC = () => {
             setResults({
                 ...data,
                 ivPayload,
-                modPayload,
-                modPayload,
+                      modPayload,
                 dvPayload,
                 ivParentName: iv.name,
                 medParentName: med?.name,

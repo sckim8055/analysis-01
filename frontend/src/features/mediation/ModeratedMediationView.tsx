@@ -21,7 +21,7 @@ export const ModeratedMediationView: React.FC = () => {
     const [isExporting2, setIsExporting2] = useState(false);
 
     const tabs = React.useMemo(() => {
-        const pairs: { iv: any, med: any, mod: any, dv: any, id: string, name: string, analysisType: string }[] = [];
+        const pairs: { iv: any, med: any, mod: any, dv: any, id: string, name: string, analysisType: string, modelType?: number }[] = [];
 
         if (savedModelEdges && savedModelEdges.length > 0 && savedModelNodes && savedModelNodes.length > 0) {
             // 1. Find standard paths (IV -> DV, IV -> Med, Med -> DV) ignoring moderators for a moment
@@ -239,7 +239,6 @@ export const ModeratedMediationView: React.FC = () => {
                     dv_parent_name: dv.name,
                     ivs: ivPayload,
                     meds: medPayload,
-          modPayload,
                     mods: modPayload,
                     dvs: dvPayload,
                     n_boot: useBootstrapping ? bootCount : 0,
@@ -255,7 +254,6 @@ export const ModeratedMediationView: React.FC = () => {
                 ...data,
                 ivPayload,
                 medPayload,
-          modPayload,
                 modPayload,
                 dvPayload,
                 ivParentName: iv.name,

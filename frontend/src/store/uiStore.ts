@@ -16,6 +16,7 @@ export type AnalysisStep =
   | 'regression' 
   | 'mediation' 
   | 'moderation'
+  | 'moderated_mediation'
   | 'report';
 
 interface UiState {
