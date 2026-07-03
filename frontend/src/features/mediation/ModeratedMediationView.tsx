@@ -320,17 +320,19 @@ export const ModeratedMediationView: React.FC = () => {
             const m = dvRes.m_model;
             const y = dvRes.y_model;
 
-            y.coefficients.forEach((c: any) => {
-                if (c.name === 'const') return;
-                const c_m = m.coefficients.find((x: any) => x.name === c.name) || { B: null, se: null, p: null };
+            const allNames = Array.from(new Set([...m.coefficients.map((c:any)=>c.name), ...y.coefficients.map((c:any)=>c.name)]));
+            allNames.forEach((name: any) => {
+                if (name === 'const') return;
+                const c_m = m.coefficients.find((x: any) => x.name === name) || { B: null, se: null, p: null };
+                const c_y = y.coefficients.find((x: any) => x.name === name) || { B: null, se: null, p: null };
                 rows.push({
-                    '구분': c.name,
+                    '구분': name,
                     [`매개변수모형(${dvRes.med_name})_β`]: c_m.B !== null && c_m.B !== undefined ? c_m.B.toFixed(3) : '',
                     [`매개변수모형(${dvRes.med_name})_SE`]: c_m.se !== null && c_m.se !== undefined ? c_m.se.toFixed(3) : '',
                     [`매개변수모형(${dvRes.med_name})_p`]: c_m.p !== null && c_m.p !== undefined ? (c_m.p < 0.001 ? '.000' : c_m.p.toFixed(3)) : '',
-                    [`종속변수모형(${dvRes.dv_name})_β`]: c.B !== null && c.B !== undefined ? c.B.toFixed(3) : '',
-                    [`종속변수모형(${dvRes.dv_name})_SE`]: c.se !== null && c.se !== undefined ? c.se.toFixed(3) : '',
-                    [`종속변수모형(${dvRes.dv_name})_p`]: c.p !== null && c.p !== undefined ? (c.p < 0.001 ? '.000' : c.p.toFixed(3)) : ''
+                    [`종속변수모형(${dvRes.dv_name})_β`]: c_y.B !== null && c_y.B !== undefined ? c_y.B.toFixed(3) : '',
+                    [`종속변수모형(${dvRes.dv_name})_SE`]: c_y.se !== null && c_y.se !== undefined ? c_y.se.toFixed(3) : '',
+                    [`종속변수모형(${dvRes.dv_name})_p`]: c_y.p !== null && c_y.p !== undefined ? (c_y.p < 0.001 ? '.000' : c_y.p.toFixed(3)) : ''
                 });
             });
 
