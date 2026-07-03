@@ -562,6 +562,9 @@ export const ModeratedMediationView: React.FC = () => {
                         <div className="glass-panel" style={{ borderRadius: '12px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-base)', paddingBottom: '16px' }}>
                             <div style={{ padding: '16px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-surface)' }}>
                                 <h3 style={{ margin: 0, fontWeight: 'normal', fontSize: '15px' }}>가설 설정 ({results?.hypothesisName})</h3>
+                                <button onClick={handleExportHypothesis} disabled={isExporting1} className="btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '4px 10px', height: 'auto' }}>
+                                    <Download size={14} /> {isExporting1 ? '다운로드 중...' : '가설 표 다운로드'}
+                                </button>
                             </div>
                             <div style={{ padding: '16px', overflowX: 'auto' }}>
                                 <table style={{ borderCollapse: 'collapse', width: '100%', borderTop: '2px solid var(--text-primary)', borderBottom: '2px solid var(--text-primary)', textAlign: 'left', color: 'var(--text-primary)', fontSize: '13px' }}>
@@ -585,7 +588,7 @@ export const ModeratedMediationView: React.FC = () => {
                             </div>
                         </div>
 
-                        <ModeratedMediationTable results={results} />
+                        <ModeratedMediationTable results={results} onExport={() => handleExportMediation(results.results[0], results.results[0].models || [])} isExporting={isExporting2} />
                     </div>
 
                     

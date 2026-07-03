@@ -1,6 +1,8 @@
 import React from 'react';
 
-export const ModeratedMediationTable = ({ results }: { results: any }) => {
+import { Download } from 'lucide-react';
+
+export const ModeratedMediationTable = ({ results, onExport, isExporting }: { results: any, onExport?: () => void, isExporting?: boolean }) => {
     if (!results || !results.results) return null;
     const res = results.results[0];
     if (!res || !res.m_model || !res.y_model) return null;
@@ -12,10 +14,15 @@ export const ModeratedMediationTable = ({ results }: { results: any }) => {
 
     return (
         <div className="glass-panel" style={{ borderRadius: '12px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-base)', paddingBottom: '16px' }}>
-            <div style={{ padding: '16px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-surface)' }}>
+            <div style={{ padding: '16px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-surface)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3 style={{ margin: 0, fontWeight: 'normal', fontSize: '15px' }}>
                     {`<표> 독립변수와 ${res.dv_name}의 관계에서 ${res.mod_name}의 조절된 매개효과`}
                 </h3>
+                {onExport && (
+                    <button onClick={onExport} disabled={isExporting} className="btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '4px 10px', height: 'auto' }}>
+                        <Download size={14} /> {isExporting ? '다운로드 중...' : '분석 표 다운로드'}
+                    </button>
+                )}
             </div>
             <div style={{ padding: '16px', overflowX: 'auto' }}>
                 <table style={{ borderCollapse: 'collapse', width: '100%', borderTop: '2px solid var(--text-primary)', borderBottom: '2px solid var(--text-primary)', textAlign: 'center', color: 'var(--text-primary)', fontSize: '13px' }}>
