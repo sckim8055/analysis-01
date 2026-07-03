@@ -271,24 +271,45 @@ export const ModerationView: React.FC = () => {
         setIsExporting1(true);
         try {
             const hypothesesRows: any[] = [];
+            const hLabel = results.hypothesisName || 'H';
             let subHIdx = 1;
+            let adoptedCount = 0;
+            let totalHypotheses = 0;
+
             results.results.forEach((dvRes: any) => {
-                dvRes.models.forEach((m: any) => {
-                    m.adoptions.forEach((ad: any) => {
-                        hypothesesRows.push({
-                            '가설': `${results.hypothesisName}-${subHIdx++}`,
-                            '가설 내용': `'${m.med_name}'은(는) '${ad.iv}'와(과) '${dvRes.dv_name}' 간의 관계를 매개할 것이다.`,
-                            '채택여부': ad.status
-                        });
-                    });
+                const intCoef = dvRes.model3.coefficients.find((c: any) => c.name.includes('X') || c.name.includes('x'));
+                let status = '기각';
+                if (intCoef && intCoef.p < 0.05) {
+                    status = '채택';
+                    adoptedCount++;
+                }
+                totalHypotheses++;
+                
+                hypothesesRows.push({
+                    '가설': `${hLabel}-${subHIdx++}`,
+                    '가설 내용': `'${results.modParentName}'은(는) '${results.ivParentName}'와(과) '${dvRes.dv_name}' 간의 관계를 조절할 것이다.`,
+                    '채택여부': status
                 });
+            });
+
+            let mainStatus = '기각';
+            if (totalHypotheses > 0) {
+                if (adoptedCount === 0) mainStatus = '기각';
+                else if (adoptedCount === totalHypotheses) mainStatus = '채택';
+                else mainStatus = '부분 채택';
+            }
+
+            hypothesesRows.unshift({
+                '가설': hLabel,
+                '가설 내용': `${results.modParentName}은(는) ${results.ivParentName}과(와) ${results.dvParentName} 사이의 관계를 조절할 것이다.`,
+                '채택여부': mainStatus
             });
 
             const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/mediation/export`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    title: `매개효과 가설 검증 결과`,
+                    title: `조절효과 가설 검증 결과`,
                     rows: hypothesesRows
                 })
             });
@@ -297,7 +318,7 @@ export const ModerationView: React.FC = () => {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'mediation_hypothesis.xlsx';
+            a.download = 'hypothesis_table.xlsx';
             document.body.appendChild(a);
             a.click();
             a.remove();
