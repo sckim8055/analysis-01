@@ -301,6 +301,26 @@ export const MediationView: React.FC = () => {
           models.forEach((m: any) => { rRow[`${m.med_name}_β`] = m.step3.r_squared.toFixed(3); rRow[`${m.med_name}_t`] = ''; rRow[`${m.med_name}_p`] = ''; });
           rows.push(rRow);
 
+          const sobelRow: any = { '단계': '', '구분': 'Sobel Test (Z값, p-value)' };
+          models.forEach((m: any) => {
+              const text = m.indirect_effects ? m.indirect_effects.map((ie: any) => `${ie.iv}: Z=${ie.sobel_z.toFixed(3)}, p=${ie.sobel_p < 0.001 ? '<.001' : ie.sobel_p.toFixed(3)}`).join(' | ') : '';
+              sobelRow[`${m.med_name}_β`] = text;
+              sobelRow[`${m.med_name}_t`] = '';
+              sobelRow[`${m.med_name}_p`] = '';
+          });
+          rows.push(sobelRow);
+
+          if (useBootstrapping) {
+              const bootRow: any = { '단계': '', '구분': 'Bootstrap 간접효과' };
+              models.forEach((m: any) => {
+                  const text = m.indirect_effects ? m.indirect_effects.map((ie: any) => `${ie.iv}: Effect=${ie.effect.toFixed(3)}, LLCI=${ie.boot_llci.toFixed(3)}, ULCI=${ie.boot_ulci.toFixed(3)}`).join(' | ') : '';
+                  bootRow[`${m.med_name}_β`] = text;
+                  bootRow[`${m.med_name}_t`] = '';
+                  bootRow[`${m.med_name}_p`] = '';
+              });
+              rows.push(bootRow);
+          }
+
           const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/mediation/export`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },

@@ -334,7 +334,7 @@ export const ModeratedMediationView: React.FC = () => {
         }
     };
 
-    const handleExportMediation = async (dvRes: any, models: any[]) => {
+    const handleExportMediation = async (dvRes: any, models?: any[]) => {
         setIsExporting2(true);
         try {
             const rows: any[] = [];
@@ -367,6 +367,36 @@ export const ModeratedMediationView: React.FC = () => {
                 [`매개변수모형(${dvRes.med_name})_β`]: m.f_value !== null && m.f_value !== undefined ? m.f_value.toFixed(3) : '', [`매개변수모형(${dvRes.med_name})_SE`]: '', [`매개변수모형(${dvRes.med_name})_p`]: '',
                 [`종속변수모형(${dvRes.dv_name})_β`]: y.f_value !== null && y.f_value !== undefined ? y.f_value.toFixed(3) : '', [`종속변수모형(${dvRes.dv_name})_SE`]: '', [`종속변수모형(${dvRes.dv_name})_p`]: ''
             });
+
+            rows.push({
+                '구분': `조절에 따른 ${dvRes.med_name}의 조건부 효과`,
+                [`매개변수모형(${dvRes.med_name})_β`]: '', [`매개변수모형(${dvRes.med_name})_SE`]: '', [`매개변수모형(${dvRes.med_name})_p`]: '',
+                [`종속변수모형(${dvRes.dv_name})_β`]: '', [`종속변수모형(${dvRes.dv_name})_SE`]: '', [`종속변수모형(${dvRes.dv_name})_p`]: ''
+            });
+            dvRes.conditional_effects.forEach((ce: any) => {
+                rows.push({
+                    '구분': `조건: ${ce.mod_value}`,
+                    [`매개변수모형(${dvRes.med_name})_β`]: `Effect=${ce.effect.toFixed(3)}`,
+                    [`매개변수모형(${dvRes.med_name})_SE`]: `SE=${ce.se.toFixed(3)}`,
+                    [`매개변수모형(${dvRes.med_name})_p`]: `t=${ce.t.toFixed(3)}`,
+                    [`종속변수모형(${dvRes.dv_name})_β`]: `LLCI=${ce.llci.toFixed(3)}`,
+                    [`종속변수모형(${dvRes.dv_name})_SE`]: `ULCI=${ce.ulci.toFixed(3)}`,
+                    [`종속변수모형(${dvRes.dv_name})_p`]: ''
+                });
+            });
+
+            const indexMed = dvRes.index_of_moderated_mediation;
+            if (indexMed) {
+                rows.push({
+                    '구분': 'Index of Moderated Mediation',
+                    [`매개변수모형(${dvRes.med_name})_β`]: `Index=${indexMed.index.toFixed(3)}`,
+                    [`매개변수모형(${dvRes.med_name})_SE`]: `SE=${indexMed.se.toFixed(3)}`,
+                    [`매개변수모형(${dvRes.med_name})_p`]: `LLCI=${indexMed.llci.toFixed(3)}`,
+                    [`종속변수모형(${dvRes.dv_name})_β`]: `ULCI=${indexMed.ulci.toFixed(3)}`,
+                    [`종속변수모형(${dvRes.dv_name})_SE`]: '',
+                    [`종속변수모형(${dvRes.dv_name})_p`]: ''
+                });
+            }
             
             const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/mediation/export`, {
                 method: 'POST',
