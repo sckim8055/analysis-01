@@ -313,62 +313,61 @@ export const ModerationView: React.FC = () => {
         setIsExporting2(true);
         try {
             const rows: any[] = [];
+            const m1 = models[0];
+            const m2 = models[1];
+            const m3 = models[2];
 
-            results.ivPayload.forEach((iv: any, idx: number) => {
-                const row: any = { '단계': '1단계', '구분': iv.name };
-                models.forEach((m: any) => {
-                    const c = m.step1.coefficients.find((c: any) => c.name === iv.name) || { beta: 0, t: 0, p: 1 };
-                    row[`${m.med_name}_β`] = c.beta.toFixed(3);
-                    row[`${m.med_name}_t`] = c.t.toFixed(3);
-                    row[`${m.med_name}_p`] = c.p.toFixed(3);
+            m3.coefficients.forEach((c: any) => {
+                if (c.name === 'const') return;
+                const c1 = m1.coefficients.find((x: any) => x.name === c.name) || { B: null, t: null, p: null };
+                const c2 = m2.coefficients.find((x: any) => x.name === c.name) || { B: null, t: null, p: null };
+                rows.push({
+                    '구분': c.name,
+                    '모델 I_β': c1.B !== null ? c1.B.toFixed(3) : '',
+                    '모델 I_t': c1.t !== null ? c1.t.toFixed(3) : '',
+                    '모델 I_p': c1.p !== null ? (c1.p < 0.001 ? '.000' : c1.p.toFixed(3)) : '',
+                    '모델 II_β': c2.B !== null ? c2.B.toFixed(3) : '',
+                    '모델 II_t': c2.t !== null ? c2.t.toFixed(3) : '',
+                    '모델 II_p': c2.p !== null ? (c2.p < 0.001 ? '.000' : c2.p.toFixed(3)) : '',
+                    '모델 III_β': c.B !== null ? c.B.toFixed(3) : '',
+                    '모델 III_t': c.t !== null ? c.t.toFixed(3) : '',
+                    '모델 III_p': c.p !== null ? (c.p < 0.001 ? '.000' : c.p.toFixed(3)) : ''
                 });
-                rows.push(row);
             });
 
-            results.ivPayload.forEach((iv: any, idx: number) => {
-                const row: any = { '단계': '2단계', '구분': iv.name };
-                models.forEach((m: any) => {
-                    const c = m.step2.coefficients.find((c: any) => c.name === iv.name) || { beta: 0, t: 0, p: 1 };
-                    row[`${m.med_name}_β`] = c.beta.toFixed(3);
-                    row[`${m.med_name}_t`] = c.t.toFixed(3);
-                    row[`${m.med_name}_p`] = c.p.toFixed(3);
-                });
-                rows.push(row);
+            rows.push({
+                '구분': 'F-value',
+                '모델 I_β': m1.f_value !== null ? m1.f_value.toFixed(3) : '', '모델 I_t': '', '모델 I_p': '',
+                '모델 II_β': m2.f_value !== null ? m2.f_value.toFixed(3) : '', '모델 II_t': '', '모델 II_p': '',
+                '모델 III_β': m3.f_value !== null ? m3.f_value.toFixed(3) : '', '모델 III_t': '', '모델 III_p': ''
             });
 
-            results.ivPayload.forEach((iv: any, idx: number) => {
-                const row: any = { '단계': '3단계', '구분': iv.name };
-                models.forEach((m: any) => {
-                    const c = m.step3.coefficients.find((c: any) => c.name === iv.name) || { beta: 0, t: 0, p: 1 };
-                    row[`${m.med_name}_β`] = c.beta.toFixed(3);
-                    row[`${m.med_name}_t`] = c.t.toFixed(3);
-                    row[`${m.med_name}_p`] = c.p.toFixed(3);
-                });
-                rows.push(row);
+            rows.push({
+                '구분': '유의확률(F)',
+                '모델 I_β': m1.f_pvalue !== null ? (m1.f_pvalue < 0.001 ? '.000' : m1.f_pvalue.toFixed(3)) : '', '모델 I_t': '', '모델 I_p': '',
+                '모델 II_β': m2.f_pvalue !== null ? (m2.f_pvalue < 0.001 ? '.000' : m2.f_pvalue.toFixed(3)) : '', '모델 II_t': '', '모델 II_p': '',
+                '모델 III_β': m3.f_pvalue !== null ? (m3.f_pvalue < 0.001 ? '.000' : m3.f_pvalue.toFixed(3)) : '', '모델 III_t': '', '모델 III_p': ''
             });
 
-            const medRow: any = { '단계': '3단계(매개)', '구분': '매개변수' };
-            models.forEach((m: any) => {
-                const c = m.step3.med_coefficient;
-                medRow[`${m.med_name}_β`] = c.beta.toFixed(3);
-                medRow[`${m.med_name}_t`] = c.t.toFixed(3);
-                medRow[`${m.med_name}_p`] = c.p.toFixed(3);
+            rows.push({
+                '구분': 'R²',
+                '모델 I_β': m1.r_squared !== null ? m1.r_squared.toFixed(3) : '', '모델 I_t': '', '모델 I_p': '',
+                '모델 II_β': m2.r_squared !== null ? m2.r_squared.toFixed(3) : '', '모델 II_t': '', '모델 II_p': '',
+                '모델 III_β': m3.r_squared !== null ? m3.r_squared.toFixed(3) : '', '모델 III_t': '', '모델 III_p': ''
             });
-            rows.push(medRow);
 
-            const fRow: any = { '단계': '', '구분': 'F-value (3단계)' };
-            models.forEach((m: any) => { fRow[`${m.med_name}_β`] = m.step3.f_value.toFixed(3); fRow[`${m.med_name}_t`] = ''; fRow[`${m.med_name}_p`] = ''; });
-            rows.push(fRow);
-
-            const rRow: any = { '단계': '', '구분': 'R² (3단계)' };
-            models.forEach((m: any) => { rRow[`${m.med_name}_β`] = m.step3.r_squared.toFixed(3); rRow[`${m.med_name}_t`] = ''; rRow[`${m.med_name}_p`] = ''; });
-            rows.push(rRow);
+            rows.push({
+                '구분': 'Change of R²',
+                '모델 I_β': '', '모델 I_t': '', '모델 I_p': '',
+                '모델 II_β': m2.r2_change !== null && m2.r2_change !== undefined ? m2.r2_change.toFixed(3) : '', '모델 II_t': '', '모델 II_p': '',
+                '모델 III_β': m3.r2_change !== null && m3.r2_change !== undefined ? m3.r2_change.toFixed(3) : '', '모델 III_t': '', '모델 III_p': ''
+            });
 
             const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/mediation/export`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    title: `<표> ${results.ivParentName}과(와) ${dvRes.dv_name} 간의 관계에서 ${results.medParentName}의 매개효과`,
+                    title: `<표> 독립변수와 ${dvRes.dv_name} 간의 ${dvRes.mod_name}의 조절효과`,
                     rows: rows
                 })
             });
@@ -377,7 +376,7 @@ export const ModerationView: React.FC = () => {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `mediation_table_${dvRes.dv_name}.xlsx`;
+            a.download = `moderation_table_${dvRes.dv_name}.xlsx`;
             document.body.appendChild(a);
             a.click();
             a.remove();
