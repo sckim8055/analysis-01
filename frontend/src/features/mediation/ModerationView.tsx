@@ -365,9 +365,9 @@ export const ModerationView: React.FC = () => {
 
             rows.push({
                 '구분': '유의확률(F)',
-                '모델 I_β': m1.f_pvalue !== null ? (m1.f_pvalue < 0.001 ? '.000' : m1.f_pvalue.toFixed(3)) : '', '모델 I_t': '', '모델 I_p': '',
-                '모델 II_β': m2.f_pvalue !== null ? (m2.f_pvalue < 0.001 ? '.000' : m2.f_pvalue.toFixed(3)) : '', '모델 II_t': '', '모델 II_p': '',
-                '모델 III_β': m3.f_pvalue !== null ? (m3.f_pvalue < 0.001 ? '.000' : m3.f_pvalue.toFixed(3)) : '', '모델 III_t': '', '모델 III_p': ''
+                '모델 I_β': m1.f_p_value !== null ? (m1.f_p_value < 0.001 ? '.000' : m1.f_p_value.toFixed(3)) : '', '모델 I_t': '', '모델 I_p': '',
+                '모델 II_β': m2.f_p_value !== null ? (m2.f_p_value < 0.001 ? '.000' : m2.f_p_value.toFixed(3)) : '', '모델 II_t': '', '모델 II_p': '',
+                '모델 III_β': m3.f_p_value !== null ? (m3.f_p_value < 0.001 ? '.000' : m3.f_p_value.toFixed(3)) : '', '모델 III_t': '', '모델 III_p': ''
             });
 
             rows.push({
