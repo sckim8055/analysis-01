@@ -24,7 +24,7 @@ export const ModerationTable = ({ results, onExport, isExporting }: { results: a
                 )}
             </div>
             <div style={{ padding: '16px', overflowX: 'auto' }}>
-                <table style={{ borderCollapse: 'collapse', width: '100%', borderTop: '2px solid var(--text-primary)', borderBottom: '2px solid var(--text-primary)', textAlign: 'center', color: 'var(--text-primary)', fontSize: '13px' }}>
+                <table id="mod-table" style={{ borderCollapse: 'collapse', width: '100%', borderTop: '2px solid var(--text-primary)', borderBottom: '2px solid var(--text-primary)', textAlign: 'center', color: 'var(--text-primary)', fontSize: '13px' }}>
                     <thead>
                         <tr style={{ backgroundColor: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)' }}>
                             <th rowSpan={2} style={{ padding: '10px', borderRight: '1px solid var(--border-color)' }}>구분</th>

@@ -1,3 +1,4 @@
+import { exportHtmlTableToExcel } from '../../utils/excelExport';
 import React, { useState, useEffect } from 'react';
 import { useAnalysisStore } from '../../store/analysisStore';
 import { useUiStore } from '../../store/uiStore';
@@ -337,84 +338,9 @@ export const ModeratedMediationView: React.FC = () => {
     const handleExportMediation = async (dvRes: any, models?: any[]) => {
         setIsExporting2(true);
         try {
-            const rows: any[] = [];
-            const m = dvRes.m_model;
-            const y = dvRes.y_model;
-
-            const allNames = Array.from(new Set([...m.coefficients.map((c:any)=>c.name), ...y.coefficients.map((c:any)=>c.name)]));
-            allNames.forEach((name: any) => {
-                if (name === 'const') return;
-                const c_m = m.coefficients.find((x: any) => x.name === name) || { B: null, se: null, p: null };
-                const c_y = y.coefficients.find((x: any) => x.name === name) || { B: null, se: null, p: null };
-                rows.push({
-                    '구분': name,
-                    [`매개변수모형(${dvRes.med_name})_β`]: c_m.B !== null && c_m.B !== undefined ? c_m.B.toFixed(3) : '',
-                    [`매개변수모형(${dvRes.med_name})_SE`]: c_m.se !== null && c_m.se !== undefined ? c_m.se.toFixed(3) : '',
-                    [`매개변수모형(${dvRes.med_name})_p`]: c_m.p !== null && c_m.p !== undefined ? (c_m.p < 0.001 ? '.000' : c_m.p.toFixed(3)) : '',
-                    [`종속변수모형(${dvRes.dv_name})_β`]: c_y.B !== null && c_y.B !== undefined ? c_y.B.toFixed(3) : '',
-                    [`종속변수모형(${dvRes.dv_name})_SE`]: c_y.se !== null && c_y.se !== undefined ? c_y.se.toFixed(3) : '',
-                    [`종속변수모형(${dvRes.dv_name})_p`]: c_y.p !== null && c_y.p !== undefined ? (c_y.p < 0.001 ? '.000' : c_y.p.toFixed(3)) : ''
-                });
-            });
-
-            rows.push({
-                '구분': 'R²',
-                [`매개변수모형(${dvRes.med_name})_β`]: m.r_squared !== null && m.r_squared !== undefined ? m.r_squared.toFixed(3) : '', [`매개변수모형(${dvRes.med_name})_SE`]: '', [`매개변수모형(${dvRes.med_name})_p`]: '',
-                [`종속변수모형(${dvRes.dv_name})_β`]: y.r_squared !== null && y.r_squared !== undefined ? y.r_squared.toFixed(3) : '', [`종속변수모형(${dvRes.dv_name})_SE`]: '', [`종속변수모형(${dvRes.dv_name})_p`]: ''
-            });
-            rows.push({
-                '구분': 'F-value',
-                [`매개변수모형(${dvRes.med_name})_β`]: m.f_value !== null && m.f_value !== undefined ? m.f_value.toFixed(3) : '', [`매개변수모형(${dvRes.med_name})_SE`]: '', [`매개변수모형(${dvRes.med_name})_p`]: '',
-                [`종속변수모형(${dvRes.dv_name})_β`]: y.f_value !== null && y.f_value !== undefined ? y.f_value.toFixed(3) : '', [`종속변수모형(${dvRes.dv_name})_SE`]: '', [`종속변수모형(${dvRes.dv_name})_p`]: ''
-            });
-
-            rows.push({
-                '구분': `조절에 따른 ${dvRes.med_name}의 조건부 효과`,
-                [`매개변수모형(${dvRes.med_name})_β`]: '', [`매개변수모형(${dvRes.med_name})_SE`]: '', [`매개변수모형(${dvRes.med_name})_p`]: '',
-                [`종속변수모형(${dvRes.dv_name})_β`]: '', [`종속변수모형(${dvRes.dv_name})_SE`]: '', [`종속변수모형(${dvRes.dv_name})_p`]: ''
-            });
-            dvRes.conditional_effects.forEach((ce: any) => {
-                rows.push({
-                    '구분': `조건: ${ce.mod_value}`,
-                    [`매개변수모형(${dvRes.med_name})_β`]: `Effect=${ce.effect.toFixed(3)}`,
-                    [`매개변수모형(${dvRes.med_name})_SE`]: `SE=${ce.se.toFixed(3)}`,
-                    [`매개변수모형(${dvRes.med_name})_p`]: `t=${ce.t.toFixed(3)}`,
-                    [`종속변수모형(${dvRes.dv_name})_β`]: `LLCI=${ce.llci.toFixed(3)}`,
-                    [`종속변수모형(${dvRes.dv_name})_SE`]: `ULCI=${ce.ulci.toFixed(3)}`,
-                    [`종속변수모형(${dvRes.dv_name})_p`]: ''
-                });
-            });
-
-            const indexMed = dvRes.index_of_moderated_mediation;
-            if (indexMed) {
-                rows.push({
-                    '구분': 'Index of Moderated Mediation',
-                    [`매개변수모형(${dvRes.med_name})_β`]: `Index=${indexMed.index.toFixed(3)}`,
-                    [`매개변수모형(${dvRes.med_name})_SE`]: `SE=${indexMed.se.toFixed(3)}`,
-                    [`매개변수모형(${dvRes.med_name})_p`]: `LLCI=${indexMed.llci.toFixed(3)}`,
-                    [`종속변수모형(${dvRes.dv_name})_β`]: `ULCI=${indexMed.ulci.toFixed(3)}`,
-                    [`종속변수모형(${dvRes.dv_name})_SE`]: '',
-                    [`종속변수모형(${dvRes.dv_name})_p`]: ''
-                });
-            }
-            
-            const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/mediation/export`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    title: `<표> 독립변수와 ${dvRes.dv_name}의 관계에서 ${dvRes.mod_name}의 조절된 매개효과`,
-                    rows: rows
-                })
-            });
-            if (!res.ok) throw new Error('Export failed');
-            const blob = await res.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `moderated_mediation_table_${dvRes.dv_name}.xlsx`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
+            const title = `<표> 독립변수와 ${dvRes.dv_name}의 관계에서 ${dvRes.mod_name}의 조절된 매개효과`;
+            const filename = `moderated_mediation_table_${dvRes.dv_name}.xlsx`;
+            exportHtmlTableToExcel(title, filename, ['mod-med-table']);
         } catch (err) {
             console.error(err);
             alert('엑셀 다운로드 중 오류가 발생했습니다.');

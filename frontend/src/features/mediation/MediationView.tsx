@@ -1,3 +1,4 @@
+import { exportHtmlTableToExcel } from '../../utils/excelExport';
 import React, { useState, useEffect } from 'react';
 import { useAnalysisStore } from '../../store/analysisStore';
 import { useUiStore } from '../../store/uiStore';
@@ -246,98 +247,16 @@ export const MediationView: React.FC = () => {
       }
   };
 
-  const handleExportMediation = async (dvRes: any, models: any[]) => {
+  const handleExportMediation = async (dvRes: any, dvIdx: number) => {
       setIsExporting2(true);
       try {
-          const rows: any[] = [];
-          
-          results.ivPayload.forEach((iv: any, idx: number) => {
-              const row: any = { '단계': '1단계', '구분': iv.name };
-              models.forEach((m: any) => {
-                  const c = m.step1.coefficients.find((c: any) => c.name === iv.name) || { beta:0, t:0, p:1 };
-                  row[`${m.med_name}_β`] = c.beta.toFixed(3);
-                  row[`${m.med_name}_t`] = c.t.toFixed(3);
-                  row[`${m.med_name}_p`] = c.p.toFixed(3);
-              });
-              rows.push(row);
-          });
-          
-          results.ivPayload.forEach((iv: any, idx: number) => {
-              const row: any = { '단계': '2단계', '구분': iv.name };
-              models.forEach((m: any) => {
-                  const c = m.step2.coefficients.find((c: any) => c.name === iv.name) || { beta:0, t:0, p:1 };
-                  row[`${m.med_name}_β`] = c.beta.toFixed(3);
-                  row[`${m.med_name}_t`] = c.t.toFixed(3);
-                  row[`${m.med_name}_p`] = c.p.toFixed(3);
-              });
-              rows.push(row);
-          });
-
-          results.ivPayload.forEach((iv: any, idx: number) => {
-              const row: any = { '단계': '3단계', '구분': iv.name };
-              models.forEach((m: any) => {
-                  const c = m.step3.coefficients.find((c: any) => c.name === iv.name) || { beta:0, t:0, p:1 };
-                  row[`${m.med_name}_β`] = c.beta.toFixed(3);
-                  row[`${m.med_name}_t`] = c.t.toFixed(3);
-                  row[`${m.med_name}_p`] = c.p.toFixed(3);
-              });
-              rows.push(row);
-          });
-
-          const medRow: any = { '단계': '3단계(매개)', '구분': '매개변수' };
-          models.forEach((m: any) => {
-              const c = m.step3.med_coefficient;
-              medRow[`${m.med_name}_β`] = c.beta.toFixed(3);
-              medRow[`${m.med_name}_t`] = c.t.toFixed(3);
-              medRow[`${m.med_name}_p`] = c.p.toFixed(3);
-          });
-          rows.push(medRow);
-
-          const fRow: any = { '단계': '', '구분': 'F-value (3단계)' };
-          models.forEach((m: any) => { fRow[`${m.med_name}_β`] = m.step3.f_value.toFixed(3); fRow[`${m.med_name}_t`] = ''; fRow[`${m.med_name}_p`] = ''; });
-          rows.push(fRow);
-
-          const rRow: any = { '단계': '', '구분': 'R² (3단계)' };
-          models.forEach((m: any) => { rRow[`${m.med_name}_β`] = m.step3.r_squared.toFixed(3); rRow[`${m.med_name}_t`] = ''; rRow[`${m.med_name}_p`] = ''; });
-          rows.push(rRow);
-
-          const sobelRow: any = { '단계': '', '구분': 'Sobel Test (Z값, p-value)' };
-          models.forEach((m: any) => {
-              const text = m.indirect_effects ? m.indirect_effects.map((ie: any) => `${ie.iv}: Z=${ie.sobel_z.toFixed(3)}, p=${ie.sobel_p < 0.001 ? '<.001' : ie.sobel_p.toFixed(3)}`).join(' | ') : '';
-              sobelRow[`${m.med_name}_β`] = text;
-              sobelRow[`${m.med_name}_t`] = '';
-              sobelRow[`${m.med_name}_p`] = '';
-          });
-          rows.push(sobelRow);
-
+          const title = `<표> ${results.ivParentName}과(와) ${dvRes.dv_name} 간의 관계에서 ${results.medParentName}의 매개효과`;
+          const filename = `mediation_table_${dvRes.dv_name}.xlsx`;
+          const tableIds = [`mediation-table-${dvIdx}`];
           if (useBootstrapping) {
-              const bootRow: any = { '단계': '', '구분': 'Bootstrap 간접효과' };
-              models.forEach((m: any) => {
-                  const text = m.indirect_effects ? m.indirect_effects.map((ie: any) => `${ie.iv}: Effect=${ie.effect.toFixed(3)}, LLCI=${ie.boot_llci.toFixed(3)}, ULCI=${ie.boot_ulci.toFixed(3)}`).join(' | ') : '';
-                  bootRow[`${m.med_name}_β`] = text;
-                  bootRow[`${m.med_name}_t`] = '';
-                  bootRow[`${m.med_name}_p`] = '';
-              });
-              rows.push(bootRow);
+              tableIds.push(`boot-table-${dvIdx}`);
           }
-
-          const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/mediation/export`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                  title: `<표> ${results.ivParentName}과(와) ${dvRes.dv_name} 간의 관계에서 ${results.medParentName}의 매개효과`,
-                  rows: rows
-              })
-          });
-          if (!res.ok) throw new Error('Export failed');
-          const blob = await res.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `mediation_table_${dvRes.dv_name}.xlsx`;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
+          exportHtmlTableToExcel(title, filename, tableIds);
       } catch (err) {
           console.error(err);
           alert('엑셀 다운로드 중 오류가 발생했습니다.');
@@ -559,12 +478,12 @@ export const MediationView: React.FC = () => {
                                     <h3 style={{ margin: 0, fontWeight: 'normal', fontSize: '15px' }}>
                                         {`<표> ${results.ivParentName}과(와) ${dvRes.dv_name} 간의 관계에서 ${results.medParentName}의 매개효과`}
                                     </h3>
-                                    <button className="btn-secondary" style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }} disabled={isExporting2} onClick={() => handleExportMediation(dvRes, models)}>
+                                    <button className="btn-secondary" style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }} disabled={isExporting2} onClick={() => handleExportMediation(dvRes, dvIdx)}>
                                         <Download size={14} /> {isExporting2 ? '다운로드 중...' : '분석 표 다운로드'}
                                     </button>
                                 </div>
                                 <div style={{ padding: '16px', overflowX: 'auto' }}>
-                                    <table style={{ borderCollapse: 'collapse', width: 'max-content', borderTop: '2px solid var(--text-primary)', borderBottom: '2px solid var(--text-primary)', textAlign: 'center', color: 'var(--text-primary)', fontSize: '13px' }}>
+                                    <table id={`mediation-table-${dvIdx}`} style={{ borderCollapse: 'collapse', width: 'max-content', borderTop: '2px solid var(--text-primary)', borderBottom: '2px solid var(--text-primary)', textAlign: 'center', color: 'var(--text-primary)', fontSize: '13px' }}>
                                         <thead>
                                             <tr style={{ backgroundColor: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)' }}>
                                                 <th rowSpan={2} colSpan={2} style={{ padding: '10px', borderRight: '1px solid var(--border-color)' }}>구분<br/>(독립/매개/종속)</th>
@@ -693,7 +612,7 @@ export const MediationView: React.FC = () => {
                                         </h3>
                                     </div>
                                     <div style={{ padding: '16px', overflowX: 'auto' }}>
-                                        <table style={{ borderCollapse: 'collapse', width: '100%', borderTop: '2px solid var(--text-primary)', borderBottom: '2px solid var(--text-primary)', textAlign: 'center', color: 'var(--text-primary)', fontSize: '13px' }}>
+                                        <table id={`boot-table-${dvIdx}`} style={{ borderCollapse: 'collapse', width: '100%', borderTop: '2px solid var(--text-primary)', borderBottom: '2px solid var(--text-primary)', textAlign: 'center', color: 'var(--text-primary)', fontSize: '13px' }}>
                                             <thead>
                                                 <tr style={{ backgroundColor: 'var(--bg-surface)', borderBottom: '1px solid var(--text-primary)' }}>
                                                     <th style={{ padding: '10px', borderRight: '1px solid var(--border-color)' }}>경로</th>
