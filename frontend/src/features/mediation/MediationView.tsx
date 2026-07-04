@@ -265,6 +265,20 @@ export const MediationView: React.FC = () => {
       }
   };
 
+  
+  useEffect(() => {
+    if (results && results.results && results.results.length > 0) {
+      useAnalysisStore.getState().setCachedResult(`mediation_${activeTabIdx}`, {
+        results,
+        settings: {
+          '분석 종류': '매개효과 분석 (Model 4)',
+          '부트스트래핑': useBootstrapping ? `Yes (${bootCount}회)` : 'No'
+        },
+        interpretation: generateInterpretation()
+      });
+    }
+  }, [results, activeTabIdx, useBootstrapping, bootCount]);
+
   const generateInterpretation = () => {
       if (!results) return "";
       let text = `본 연구에서 설정한 가설 ${results.hypothesisName}을(를) 검증하기 위하여, 독립변수인 [${results.ivParentName}]이(가) 종속변수인 [${results.dvParentName}]에 미치는 영향에서 매개변수인 [${results.medParentName}]의 매개효과를 분석하였다. 이를 위해 Baron과 Kenny(1986)가 제시한 3단계 위계적 다중회귀분석(Hierarchical Multiple Regression Analysis)을 실시하였다. 

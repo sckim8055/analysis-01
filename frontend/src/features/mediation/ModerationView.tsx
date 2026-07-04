@@ -416,7 +416,7 @@ ightarrow$ 종속변수):**
 
     useEffect(() => {
         if (results && results.results && results.results.length > 0) {
-            useAnalysisStore.getState().setCachedResult(`mediation_${activeTabIdx}`, {
+            useAnalysisStore.getState().setCachedResult(`moderation_${activeTabIdx}`, {
                 results,
                 settings: { useBootstrapping, bootCount, tabName: tabs[activeTabIdx]?.name },
                 interpretation: generateInterpretation()
