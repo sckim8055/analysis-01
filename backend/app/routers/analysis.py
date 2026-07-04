@@ -454,7 +454,7 @@ async def perform_correlation(request: CorrelationRequest):
             valid_df = df_means[[names[i], names[j]]].dropna()
             matrix_n[i][j] = len(valid_df)
             
-                        if i != j and len(valid_df) > 2:
+            if i != j and len(valid_df) > 2:
                 r, p = pearsonr(valid_df[names[i]], valid_df[names[j]])
                 matrix_r[i][j] = round(float(r), 3) if not math.isnan(r) else None
                 matrix_p[i][j] = float(p) if not math.isnan(p) else None
