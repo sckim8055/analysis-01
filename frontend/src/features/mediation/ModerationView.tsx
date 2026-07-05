@@ -461,7 +461,7 @@ ightarrow$ 종속변수):**
             {loading ? (
                 <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
                     <RefreshCw className="animate-spin" size={24} style={{ margin: '0 auto 12px' }} />
-                    데이터 분석 중... (Bootstrap 횟수에 따라 수십 초 이상 소요될 수 있습니다)
+                    {useBootstrapping ? "데이터 분석 중... (Bootstrap 횟수에 따라 수십 초 이상 소요될 수 있습니다)" : "데이터 분석 중..."}
                 </div>
             ) : results ? (() => {
                 const hypotheses: any[] = [];

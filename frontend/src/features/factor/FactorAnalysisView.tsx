@@ -309,16 +309,28 @@ export const FactorAnalysisView: React.FC = () => {
 
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
         {/* 1단: 좌측 사이드바 (변수 및 하위 트리) */}
-        <div className="glass-panel" style={{ width: '240px', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', minHeight: 0, borderRadius: 0, border: 'none' }}>
+        <div className="glass-panel" style={{ width: '280px', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', minHeight: 0, borderRadius: 0, border: 'none' }}>
           <div style={{ padding: '16px', borderBottom: '1px solid var(--border-color)' }}>
             <h2 className="text-h3">매핑 변수 트리</h2>
             <p className="text-small" style={{ marginTop: '4px' }}>승인 완료: {approvedVariables.length} / {allVariables.length}</p>
           </div>
-          <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
+          <div style={{ flex: 1, overflowY: 'auto', overflowX: 'auto', padding: '12px' }}>
             {allVariables.map(({ type, v }) => {
               const isApproved = approvedVariables.includes(v.id);
               const isActive = activeVarId === v.id;
               const color = getColor(type);
+              
+              const res = factorResults[v.id];
+              const survivedMap: Record<string, boolean> = {};
+              if (res?.matrixItems) {
+                res.matrixItems.forEach((m: any) => survivedMap[m.id || m.originalName] = true);
+              }
+              const getCountStr = (itemIds: string[] | undefined) => {
+                if (!itemIds) return '(0문항)';
+                if (!res?.matrixItems) return `(${itemIds.length}문항)`;
+                const survivedCount = itemIds.filter(id => survivedMap[id]).length;
+                return `(${itemIds.length}개 중 ${survivedCount}개 선택)`;
+              };
 
               return (
                 <div key={v.id} style={{ marginBottom: '8px' }}>
@@ -329,12 +341,17 @@ export const FactorAnalysisView: React.FC = () => {
                       padding: '8px 12px', borderRadius: '8px',
                       backgroundColor: isActive ? 'var(--bg-surface)' : 'transparent',
                       border: isActive ? `1px solid ${color}` : '1px solid transparent',
-                      cursor: 'pointer', transition: 'all 0.2s'
+                      cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap'
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: color }} />
                       <span style={{ fontWeight: isActive ? 600 : 400, fontSize: '0.95rem' }}>{v.name}</span>
+                      {(!v.subFactors || v.subFactors.length === 0) && (
+                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '4px' }}>
+                           {getCountStr(v.itemIds)}
+                         </span>
+                      )}
                     </div>
                     {isApproved && <Check size={14} color="var(--success)" />}
                   </div>
@@ -343,10 +360,10 @@ export const FactorAnalysisView: React.FC = () => {
                     {v.subFactors && v.subFactors.length > 0 ? (
                       v.subFactors.map(sf => (
                         <div key={sf.id} style={{ marginBottom: '6px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 0', fontSize: '0.85rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                             <Layers size={12} />
                             <span>{sf.name}</span>
-                            <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>({sf.itemIds?.length || 0})</span>
+                            <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>{getCountStr(sf.itemIds)}</span>
                           </div>
                           {/* 하위 요인에 속한 문항들 */}
                           {sf.itemIds && sf.itemIds.length > 0 && (

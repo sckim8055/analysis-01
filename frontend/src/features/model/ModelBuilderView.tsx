@@ -17,7 +17,7 @@ import { useAnalysisStore } from '../../store/analysisStore';
 import { CustomVariableNode } from './components/CustomVariableNode';
 import { JunctionNode } from './components/JunctionNode';
 import { CustomEdge } from './components/CustomEdge';
-import { PlusCircle, Clipboard, ArrowRight, X, CheckSquare, Play, Check, LayoutTemplate, Layers } from 'lucide-react';
+import { PlusCircle, Clipboard, ArrowRight, X, CheckSquare, Play, Check, LayoutTemplate, Layers, RefreshCw } from 'lucide-react';
 import { type Hypothesis } from './utils/hypothesisGenerator';
 
 const nodeTypes = {
@@ -370,6 +370,31 @@ export const ModelBuilderView: React.FC = () => {
     return 'var(--text-muted)';
   };
 
+  const addNodeToCanvas = (v: any, type: string) => {
+    // 이미 캔버스에 존재하는지 확인
+    if (nodes.find(n => n.id === v.id)) return;
+    
+    // 약간 랜덤한 위치에 배치 (겹침 방지)
+    const randomOffset = Math.floor(Math.random() * 50);
+    const newNode: Node = {
+      id: v.id,
+      type: 'customVariable',
+      position: { x: 300 + randomOffset, y: 200 + randomOffset },
+      data: { label: v.name, varType: type, isGroup: false },
+      deletable: true // 직접 추가한 노드는 삭제 가능하도록
+    };
+    setNodes(nds => nds.concat(newNode));
+  };
+
+  const handleResetCanvas = () => {
+    if (window.confirm("캔버스를 초기화하시겠습니까? 초기 진입 상태로 모든 변수가 캔버스에 나열됩니다.")) {
+        setNodes([]);
+        setEdges([]);
+        saveModel([], []);
+        setTimeout(() => window.location.reload(), 100);
+    }
+  };
+
   const handleFinalizeModel = async () => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/hypotheses/generate`, {
@@ -415,10 +440,15 @@ export const ModelBuilderView: React.FC = () => {
           </button>
           <span className="text-small" style={{ color: 'var(--text-secondary)' }}>
             * 점(원)을 끌어 선을 잇고, <b>선의 [+] 버튼</b>을 눌러 조절점을 만드세요. 선 더블클릭 시 <b>라벨 입력</b>.<br />
+            * 박스의 <b>오른쪽/아래쪽 점</b>은 화살표 출발점(Source)이며, <b>왼쪽/위쪽 점</b>은 도착점(Target)입니다.<br />
             * <b>노드를 클릭</b>하면 나타나는 테두리를 드래그하여 <b>박스 크기를 조절</b>할 수 있습니다.
           </span>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
+          <button className="btn-outline" onClick={handleResetCanvas} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <RefreshCw size={18} />
+            초기화
+          </button>
           <button className="btn-outline" onClick={() => setShowTemplateModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px', borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)' }}>
             <LayoutTemplate size={18} /> 모형 템플릿 선택
           </button>
@@ -430,12 +460,12 @@ export const ModelBuilderView: React.FC = () => {
 
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
         {/* 좌측 사이드바: 매핑 변수 트리 */}
-        <div className="glass-panel" style={{ width: '240px', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', minHeight: 0, borderRadius: 0, border: 'none' }}>
+        <div className="glass-panel" style={{ width: '300px', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', minHeight: 0, borderRadius: 0, border: 'none' }}>
           <div style={{ padding: '16px', borderBottom: '1px solid var(--border-color)' }}>
             <h2 className="text-h3">선택된 변수 목록</h2>
             <p className="text-small" style={{ marginTop: '4px' }}>캔버스 구성에 활용되는 변수</p>
           </div>
-          <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
+          <div style={{ flex: 1, overflowY: 'auto', overflowX: 'auto', padding: '12px' }}>
             {['iv', 'dv', 'med', 'mod'].map((type) => {
               const vars = mappedVars[type as keyof typeof mappedVars] || [];
               if (vars.length === 0) return null;
@@ -452,25 +482,53 @@ export const ModelBuilderView: React.FC = () => {
                   <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: typeColor, marginBottom: '8px' }}>
                     {typeName}
                   </div>
-                  {vars.map(v => (
+                  {vars.map(v => {
+                    const res = factorResults?.[v.id];
+                    const survivedMap: Record<string, boolean> = {};
+                    if (res?.matrixItems) {
+                      res.matrixItems.forEach((m: any) => survivedMap[m.id || m.originalName] = true);
+                    }
+                    const getCountStr = (itemIds: string[] | undefined) => {
+                      if (!itemIds) return '(0문항)';
+                      if (!res?.matrixItems) return `(${itemIds.length}문항)`;
+                      const survivedCount = itemIds.filter(id => survivedMap[id]).length;
+                      return `(${itemIds.length}개 중 ${survivedCount}개 선택)`;
+                    };
+
+                    return (
                     <div key={v.id} style={{ marginBottom: '8px', paddingLeft: '8px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
+                      <div 
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', cursor: 'pointer', padding: '4px 8px', borderRadius: '6px', transition: 'background-color 0.2s', position: 'relative', whiteSpace: 'nowrap' }}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-base)'}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                        onClick={() => addNodeToCanvas(v, type)}
+                        title="클릭하여 캔버스에 추가"
+                      >
                         <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: typeColor }} />
                         {v.name}
+                        {(!v.subFactors || v.subFactors.length === 0) && (
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            {getCountStr(v.itemIds)}
+                          </span>
+                        )}
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginLeft: 'auto', background: 'var(--bg-surface)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>+ 캔버스에 추가</span>
                       </div>
                       {/* 하위 요인 트리 */}
                       {v.subFactors && v.subFactors.length > 0 && (
                         <div style={{ marginLeft: '12px', borderLeft: '1px solid var(--border-light)', paddingLeft: '8px', marginTop: '4px' }}>
                           {v.subFactors.map(sf => (
-                            <div key={sf.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '2px 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                            <div key={sf.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '2px 0', fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                               <Layers size={10} />
                               <span>{sf.name}</span>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                {getCountStr(sf.itemIds)}
+                              </span>
                             </div>
                           ))}
                         </div>
                       )}
                     </div>
-                  ))}
+                  )})}
                 </div>
               );
             })}
