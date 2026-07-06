@@ -114,127 +114,135 @@ export const ModelBuilderView: React.FC = () => {
 
   // 템플릿 썸네일 렌더링 헬퍼 함수
   const renderThumbnail = (id: string) => {
-    const iv = 'var(--var-iv)';
-    const dv = 'var(--var-dv)';
-    const med = 'var(--var-med)';
-    const mod = 'var(--var-mod)';
-    const line = 'var(--border-dark)';
-    const textStyle = { fill: 'white', fontSize: '9px', fontWeight: 'bold', textAnchor: 'middle' as any, alignmentBaseline: 'central' as any };
+    const textStyle = { fill: 'white', fontSize: '13px', fontFamily: 'sans-serif', fontWeight: 'bold', textAnchor: 'middle' as any, alignmentBaseline: 'central' as any };
 
     const svgWrapper = (children: React.ReactNode) => (
-      <svg width="100%" height="100%" viewBox="0 0 100 60" preserveAspectRatio="xMidYMid meet">
+      <svg width="100%" height="100%" viewBox="0 0 120 90" preserveAspectRatio="xMidYMid meet">
         <defs>
           <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill={line} />
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b" />
           </marker>
           <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.2" />
+            <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.3" />
           </filter>
+          <linearGradient id="gradX" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#3b82f6"/><stop offset="100%" stopColor="#1d4ed8"/></linearGradient>
+          <linearGradient id="gradY" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#10b981"/><stop offset="100%" stopColor="#047857"/></linearGradient>
+          <linearGradient id="gradM" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#f59e0b"/><stop offset="100%" stopColor="#b45309"/></linearGradient>
+          <linearGradient id="gradW" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#8b5cf6"/><stop offset="100%" stopColor="#6d28d9"/></linearGradient>
         </defs>
         {children}
       </svg>
     );
 
-    const drawNode = (x: number, y: number, color: string, label: string) => (
-      <g>
-        <rect x={x} y={y} width="20" height="16" rx="4" fill={color} filter="url(#shadow)" />
-        <text x={x + 10} y={y + 8} {...textStyle} fontSize={label.length > 1 ? '7px' : '9px'} style={{ userSelect: 'none' }}>{label}</text>
-      </g>
-    );
+    const drawNode = (x: number, y: number, type: 'X'|'Y'|'M'|'W'|'M1'|'M2', label?: string) => {
+      let grad = 'url(#gradX)';
+      if (type === 'Y') grad = 'url(#gradY)';
+      else if (type.startsWith('M')) grad = 'url(#gradM)';
+      else if (type === 'W') grad = 'url(#gradW)';
+      return (
+        <g>
+          <rect x={x} y={y} width="32" height="24" rx="6" fill={grad} filter="url(#shadow)" />
+          <text x={x + 16} y={y + 13} {...textStyle} fontSize={type.length > 1 ? '11px' : '13px'}>{label || type}</text>
+        </g>
+      );
+    };
 
     const drawLine = (x1: number, y1: number, x2: number, y2: number) => (
-      <path d={`M ${x1} ${y1} L ${x2} ${y2}`} stroke={line} strokeWidth="1.5" fill="none" markerEnd="url(#arrow)" />
+      <path d={`M ${x1} ${y1} L ${x2} ${y2}`} stroke="#64748b" strokeWidth="2.5" fill="none" markerEnd="url(#arrow)" />
     );
 
     switch (id) {
       case 'model1':
         return svgWrapper(
           <>
-            {drawNode(10, 30, iv, 'X')}
-            {drawNode(70, 30, dv, 'Y')}
-            {drawNode(40, 5, mod, 'W')}
-            {drawLine(32, 38, 68, 38)}
-            {drawLine(50, 23, 50, 38)}
+            {drawLine(42, 62, 78, 62)}
+            {drawLine(60, 39, 60, 62)}
+            {drawNode(10, 50, 'X')}
+            {drawNode(78, 50, 'Y')}
+            {drawNode(44, 15, 'W')}
           </>
         );
       case 'model4':
         return svgWrapper(
           <>
-            {drawNode(10, 40, iv, 'X')}
-            {drawNode(70, 40, dv, 'Y')}
-            {drawNode(40, 5, med, 'M')}
-            {drawLine(32, 48, 68, 48)}
-            {drawLine(25, 38, 43, 23)}
-            {drawLine(57, 23, 75, 38)}
+            {drawLine(42, 67, 78, 67)}
+            {drawLine(34, 55, 50, 39)}
+            {drawLine(70, 39, 86, 55)}
+            {drawNode(10, 55, 'X')}
+            {drawNode(78, 55, 'Y')}
+            {drawNode(44, 15, 'M')}
           </>
         );
       case 'model6':
         return svgWrapper(
           <>
-            {drawNode(5, 40, iv, 'X')}
-            {drawNode(75, 40, dv, 'Y')}
-            {drawNode(25, 5, med, 'M1')}
-            {drawNode(55, 5, med, 'M2')}
-            {drawLine(27, 48, 73, 48)}
-            {drawLine(20, 38, 30, 23)}
-            {drawLine(47, 13, 53, 13)}
-            {drawLine(70, 23, 80, 38)}
+            {drawLine(37, 67, 83, 67)}
+            {drawLine(21, 55, 31, 39)}
+            {drawLine(57, 27, 63, 27)}
+            {drawLine(89, 39, 99, 55)}
+            {drawNode(5, 55, 'X')}
+            {drawNode(83, 55, 'Y')}
+            {drawNode(25, 15, 'M1')}
+            {drawNode(63, 15, 'M2')}
           </>
         );
       case 'model7':
         return svgWrapper(
           <>
-            {drawNode(10, 40, iv, 'X')}
-            {drawNode(70, 40, dv, 'Y')}
-            {drawNode(40, 20, med, 'M')}
-            {drawNode(10, 0, mod, 'W')}
-            {drawLine(25, 38, 43, 30)}
-            {drawLine(57, 30, 75, 38)}
-            {drawLine(20, 18, 30, 35)}
+            {drawLine(42, 67, 78, 67)}
+            {drawLine(34, 55, 50, 43)}
+            {drawLine(70, 39, 86, 55)}
+            {drawLine(26, 29, 38, 49)}
+            {drawNode(10, 55, 'X')}
+            {drawNode(78, 55, 'Y')}
+            {drawNode(44, 25, 'M')}
+            {drawNode(10, 5, 'W')}
           </>
         );
       case 'model8':
         return svgWrapper(
           <>
-            {drawNode(10, 40, iv, 'X')}
-            {drawNode(70, 40, dv, 'Y')}
-            {drawNode(40, 20, med, 'M')}
-            {drawNode(40, 0, mod, 'W')}
-            {drawLine(32, 48, 68, 48)}
-            {drawLine(25, 38, 43, 30)}
-            {drawLine(57, 30, 75, 38)}
-            {drawLine(34, 18, 25, 38)}
-            {drawLine(50, 18, 50, 48)}
+            {drawLine(42, 67, 78, 67)}
+            {drawLine(34, 55, 50, 43)}
+            {drawLine(70, 39, 86, 55)}
+            {drawLine(26, 29, 38, 49)}
+            {drawLine(60, 29, 60, 67)}
+            {drawNode(10, 55, 'X')}
+            {drawNode(78, 55, 'Y')}
+            {drawNode(44, 25, 'M')}
+            {drawNode(44, 5, 'W')}
           </>
         );
       case 'model14':
         return svgWrapper(
           <>
-            {drawNode(10, 40, iv, 'X')}
-            {drawNode(70, 40, dv, 'Y')}
-            {drawNode(40, 20, med, 'M')}
-            {drawNode(70, 0, mod, 'W')}
-            {drawLine(25, 38, 43, 30)}
-            {drawLine(57, 30, 75, 38)}
-            {drawLine(80, 18, 70, 35)}
+            {drawLine(42, 67, 78, 67)}
+            {drawLine(34, 55, 50, 43)}
+            {drawLine(70, 39, 86, 55)}
+            {drawLine(94, 29, 82, 49)}
+            {drawNode(10, 55, 'X')}
+            {drawNode(78, 55, 'Y')}
+            {drawNode(44, 25, 'M')}
+            {drawNode(78, 5, 'W')}
           </>
         );
       case 'model58':
         return svgWrapper(
           <>
-            {drawNode(10, 40, iv, 'X')}
-            {drawNode(70, 40, dv, 'Y')}
-            {drawNode(40, 20, med, 'M')}
-            {drawNode(40, 0, mod, 'W')}
-            {drawLine(25, 38, 43, 30)}
-            {drawLine(57, 30, 75, 38)}
-            {drawLine(34, 18, 25, 38)}
-            {drawLine(66, 18, 75, 38)}
+            {drawLine(42, 67, 78, 67)}
+            {drawLine(34, 55, 50, 43)}
+            {drawLine(70, 39, 86, 55)}
+            {drawLine(32, 29, 40, 49)}
+            {drawLine(88, 29, 80, 49)}
+            {drawNode(10, 55, 'X')}
+            {drawNode(78, 55, 'Y')}
+            {drawNode(44, 25, 'M')}
+            {drawNode(44, 5, 'W')}
           </>
         );
       case 'empty':
       default:
-        return <LayoutTemplate size={32} color="var(--text-muted)" />;
+        return <LayoutTemplate size={48} color="var(--text-muted)" style={{ opacity: 0.5 }} />;
     }
   };
 
