@@ -114,132 +114,285 @@ export const ModelBuilderView: React.FC = () => {
 
   // 템플릿 썸네일 렌더링 헬퍼 함수
   const renderThumbnail = (id: string) => {
-    const textStyle = { fill: 'white', fontSize: '13px', fontFamily: 'sans-serif', fontWeight: 'bold', textAnchor: 'middle' as any, alignmentBaseline: 'central' as any };
+    const c_iv = '#3b82f6';
+    const c_med = '#10b981';
+    const c_dv = '#ef4444';
+    const c_mod = '#f59e0b';
+
+    const textStyle = { fill: '#333', fontSize: '15px', fontFamily: 'sans-serif', fontWeight: '900', textAnchor: 'middle' as any, alignmentBaseline: 'central' as any };
 
     const svgWrapper = (children: React.ReactNode) => (
-      <svg width="100%" height="100%" viewBox="0 0 120 90" preserveAspectRatio="xMidYMid meet">
+      <svg width="100%" height="100%" viewBox="0 0 320 170" preserveAspectRatio="xMidYMid meet" style={{ padding: '8px' }}>
         <defs>
-          <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b" />
+          <marker id="arrow-iv" markerUnits="userSpaceOnUse" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="20" markerHeight="20" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill={c_iv} />
           </marker>
-          <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.3" />
+          <marker id="arrow-med" markerUnits="userSpaceOnUse" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="20" markerHeight="20" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill={c_med} />
+          </marker>
+          <marker id="arrow-mod" markerUnits="userSpaceOnUse" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="20" markerHeight="20" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill={c_mod} />
+          </marker>
+          <filter id="nodeShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.15" />
           </filter>
-          <linearGradient id="gradX" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#3b82f6"/><stop offset="100%" stopColor="#1d4ed8"/></linearGradient>
-          <linearGradient id="gradY" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#10b981"/><stop offset="100%" stopColor="#047857"/></linearGradient>
-          <linearGradient id="gradM" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#f59e0b"/><stop offset="100%" stopColor="#b45309"/></linearGradient>
-          <linearGradient id="gradW" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#8b5cf6"/><stop offset="100%" stopColor="#6d28d9"/></linearGradient>
         </defs>
         {children}
       </svg>
     );
 
-    const drawNode = (x: number, y: number, type: 'X'|'Y'|'M'|'W'|'M1'|'M2', label?: string) => {
-      let grad = 'url(#gradX)';
-      if (type === 'Y') grad = 'url(#gradY)';
-      else if (type.startsWith('M')) grad = 'url(#gradM)';
-      else if (type === 'W') grad = 'url(#gradW)';
+    const drawNode = (x: number, y: number, type: 'X'|'Y'|'M'|'W'|'Z'|'M1'|'M2', label?: string) => {
+      let color = c_iv;
+      if (type === 'Y') color = c_dv;
+      else if (type.startsWith('M')) color = c_med;
+      else if (type === 'W' || type === 'Z') color = c_mod;
       return (
         <g>
-          <rect x={x} y={y} width="32" height="24" rx="6" fill={grad} filter="url(#shadow)" />
-          <text x={x + 16} y={y + 13} {...textStyle} fontSize={type.length > 1 ? '11px' : '13px'}>{label || type}</text>
+          <circle cx={x} cy={y} r="20" fill="white" stroke={color} strokeWidth="5" filter="url(#nodeShadow)" />
+          <text x={x} y={y + 1} {...textStyle} fontSize={type.length > 1 ? '13px' : '17px'}>{label || type}</text>
         </g>
       );
     };
 
-    const drawLine = (x1: number, y1: number, x2: number, y2: number) => (
-      <path d={`M ${x1} ${y1} L ${x2} ${y2}`} stroke="#64748b" strokeWidth="2.5" fill="none" markerEnd="url(#arrow)" />
-    );
+    const drawLine = (pathD: string, type: 'iv'|'med'|'mod', dashed: boolean = false) => {
+      let color = c_iv;
+      if (type === 'med') color = c_med;
+      else if (type === 'mod') color = c_mod;
+      return (
+        <path 
+          d={pathD} 
+          stroke={color} 
+          strokeWidth="6" 
+          strokeDasharray={dashed ? "8,8" : "none"} 
+          fill="none" 
+          markerEnd={`url(#arrow-${type})`} 
+        />
+      );
+    };
+
+    const archXY = "M 60 117.5 L 60 95 Q 60 85 70 85 L 250 85 Q 260 85 260 95 L 260 117.5";
 
     switch (id) {
       case 'model1':
         return svgWrapper(
           <>
-            {drawLine(42, 62, 78, 62)}
-            {drawLine(60, 39, 60, 62)}
-            {drawNode(10, 50, 'X')}
-            {drawNode(78, 50, 'Y')}
-            {drawNode(44, 15, 'W')}
+            {drawLine("M 82.5 140 L 237.5 140", 'iv')}
+            {drawLine("M 160 62.5 L 160 140", 'mod')}
+            {drawNode(60, 140, 'X')}
+            {drawNode(260, 140, 'Y')}
+            {drawNode(160, 40, 'W')}
           </>
         );
       case 'model4':
         return svgWrapper(
           <>
-            {drawLine(42, 67, 78, 67)}
-            {drawLine(34, 55, 50, 39)}
-            {drawLine(70, 39, 86, 55)}
-            {drawNode(10, 55, 'X')}
-            {drawNode(78, 55, 'Y')}
-            {drawNode(44, 15, 'M')}
+            {drawLine("M 82.5 140 L 137.5 140", 'iv')}
+            {drawLine("M 182.5 140 L 237.5 140", 'med')}
+            {drawLine(archXY, 'iv')}
+            {drawNode(60, 140, 'X')}
+            {drawNode(260, 140, 'Y')}
+            {drawNode(160, 140, 'M')}
+          </>
+        );
+      case 'model4_parallel':
+        return svgWrapper(
+          <>
+            {drawLine("M 80 140 L 240 140", 'iv')}
+            {drawLine("M 74.8 126.6 L 145.1 63.4", 'iv')}
+            {drawLine("M 174.8 63.4 L 245.1 126.6", 'med')}
+            {drawLine("M 78.2 131.8 L 141.7 103.2", 'iv')}
+            {drawLine("M 178.2 103.2 L 241.7 131.8", 'med')}
+            {drawNode(60, 140, 'X')}
+            {drawNode(260, 140, 'Y')}
+            {drawNode(160, 50, 'M1')}
+            {drawNode(160, 95, 'M2')}
           </>
         );
       case 'model6':
         return svgWrapper(
           <>
-            {drawLine(37, 67, 83, 67)}
-            {drawLine(21, 55, 31, 39)}
-            {drawLine(57, 27, 63, 27)}
-            {drawLine(89, 39, 99, 55)}
-            {drawNode(5, 55, 'X')}
-            {drawNode(83, 55, 'Y')}
-            {drawNode(25, 15, 'M1')}
-            {drawNode(63, 15, 'M2')}
+            {drawLine("M 62.5 140 L 97.5 140", 'iv')}
+            {drawLine("M 142.5 140 L 177.5 140", 'med')}
+            {drawLine("M 222.5 140 L 257.5 140", 'med')}
+            {drawLine("M 40 117.5 L 40 75 Q 40 65 50 65 L 190 65 Q 200 65 200 75 L 200 117.5", 'iv')}
+            {drawLine("M 120 117.5 L 120 105 Q 120 95 130 95 L 270 95 Q 280 95 280 105 L 280 117.5", 'med')}
+            {drawLine("M 40 117.5 L 40 45 Q 40 35 50 35 L 270 35 Q 280 35 280 45 L 280 117.5", 'iv')}
+            {drawNode(40, 140, 'X')}
+            {drawNode(280, 140, 'Y')}
+            {drawNode(120, 140, 'M1')}
+            {drawNode(200, 140, 'M2')}
           </>
         );
       case 'model7':
         return svgWrapper(
           <>
-            {drawLine(42, 67, 78, 67)}
-            {drawLine(34, 55, 50, 43)}
-            {drawLine(70, 39, 86, 55)}
-            {drawLine(26, 29, 38, 49)}
-            {drawNode(10, 55, 'X')}
-            {drawNode(78, 55, 'Y')}
-            {drawNode(44, 25, 'M')}
-            {drawNode(10, 5, 'W')}
+            {drawLine("M 82.5 140 L 137.5 140", 'iv')}
+            {drawLine("M 182.5 140 L 237.5 140", 'med')}
+            {drawLine(archXY, 'iv')}
+            {drawLine("M 110 62.5 L 110 140", 'mod')}
+            {drawNode(60, 140, 'X')}
+            {drawNode(260, 140, 'Y')}
+            {drawNode(160, 140, 'M')}
+            {drawNode(110, 40, 'W')}
           </>
         );
       case 'model8':
         return svgWrapper(
           <>
-            {drawLine(42, 67, 78, 67)}
-            {drawLine(34, 55, 50, 43)}
-            {drawLine(70, 39, 86, 55)}
-            {drawLine(26, 29, 38, 49)}
-            {drawLine(60, 29, 60, 67)}
-            {drawNode(10, 55, 'X')}
-            {drawNode(78, 55, 'Y')}
-            {drawNode(44, 25, 'M')}
-            {drawNode(44, 5, 'W')}
+            {drawLine("M 82.5 140 L 137.5 140", 'iv')}
+            {drawLine("M 182.5 140 L 237.5 140", 'med')}
+            {drawLine(archXY, 'iv')}
+            {drawLine("M 150 60 L 110 140", 'mod')}
+            {drawLine("M 160 62.5 L 160 85", 'mod')}
+            {drawNode(60, 140, 'X')}
+            {drawNode(260, 140, 'Y')}
+            {drawNode(160, 140, 'M')}
+            {drawNode(160, 40, 'W')}
           </>
         );
       case 'model14':
         return svgWrapper(
           <>
-            {drawLine(42, 67, 78, 67)}
-            {drawLine(34, 55, 50, 43)}
-            {drawLine(70, 39, 86, 55)}
-            {drawLine(94, 29, 82, 49)}
-            {drawNode(10, 55, 'X')}
-            {drawNode(78, 55, 'Y')}
-            {drawNode(44, 25, 'M')}
-            {drawNode(78, 5, 'W')}
+            {drawLine("M 82.5 140 L 137.5 140", 'iv')}
+            {drawLine("M 182.5 140 L 237.5 140", 'med')}
+            {drawLine(archXY, 'iv')}
+            {drawLine("M 210 62.5 L 210 140", 'mod')}
+            {drawNode(60, 140, 'X')}
+            {drawNode(260, 140, 'Y')}
+            {drawNode(160, 140, 'M')}
+            {drawNode(210, 40, 'W')}
           </>
         );
       case 'model58':
         return svgWrapper(
           <>
-            {drawLine(42, 67, 78, 67)}
-            {drawLine(34, 55, 50, 43)}
-            {drawLine(70, 39, 86, 55)}
-            {drawLine(32, 29, 40, 49)}
-            {drawLine(88, 29, 80, 49)}
-            {drawNode(10, 55, 'X')}
-            {drawNode(78, 55, 'Y')}
-            {drawNode(44, 25, 'M')}
-            {drawNode(44, 5, 'W')}
+            {drawLine("M 82.5 140 L 137.5 140", 'iv')}
+            {drawLine("M 182.5 140 L 237.5 140", 'med')}
+            {drawLine(archXY, 'iv')}
+            {drawLine("M 150 60 L 110 140", 'mod')}
+            {drawLine("M 170 60 L 210 140", 'mod')}
+            {drawNode(60, 140, 'X')}
+            {drawNode(260, 140, 'Y')}
+            {drawNode(160, 140, 'M')}
+            {drawNode(160, 40, 'W')}
           </>
         );
+
+      case 'model2':
+        return svgWrapper(
+          <>
+            {drawLine("M 82.5 140 L 237.5 140", 'iv')}
+            {drawLine("M 100 62.5 L 100 140", 'mod')}
+            {drawLine("M 220 62.5 L 220 140", 'mod')}
+            {drawNode(60, 140, 'X')}
+            {drawNode(260, 140, 'Y')}
+            {drawNode(100, 40, 'W')}
+            {drawNode(220, 40, 'Z')}
+          </>
+        );
+      case 'model3':
+        return svgWrapper(
+          <>
+            {drawLine("M 82.5 140 L 237.5 140", 'iv')}
+            {drawLine("M 160 62.5 L 160 140", 'mod')}
+            {drawLine("M 220 62.5 L 160 90", 'mod')}
+            {drawNode(60, 140, 'X')}
+            {drawNode(260, 140, 'Y')}
+            {drawNode(160, 40, 'W')}
+            {drawNode(220, 40, 'Z')}
+          </>
+        );
+      case 'model5':
+        return svgWrapper(
+          <>
+            {drawLine("M 82.5 140 L 137.5 140", 'iv')}
+            {drawLine("M 182.5 140 L 237.5 140", 'med')}
+            {drawLine(archXY, 'iv')}
+            {drawLine("M 160 62.5 L 160 85", 'mod')}
+            {drawNode(60, 140, 'X')}
+            {drawNode(260, 140, 'Y')}
+            {drawNode(160, 140, 'M')}
+            {drawNode(160, 40, 'W')}
+          </>
+        );
+      case 'model15':
+        return svgWrapper(
+          <>
+            {drawLine("M 82.5 140 L 137.5 140", 'iv')}
+            {drawLine("M 182.5 140 L 237.5 140", 'med')}
+            {drawLine(archXY, 'iv')}
+            {drawLine("M 160 62.5 L 160 85", 'mod')}
+            {drawLine("M 160 62.5 L 210 140", 'mod')}
+            {drawNode(60, 140, 'X')}
+            {drawNode(260, 140, 'Y')}
+            {drawNode(160, 140, 'M')}
+            {drawNode(160, 40, 'W')}
+          </>
+        );
+      case 'model59':
+        return svgWrapper(
+          <>
+            {drawLine("M 82.5 140 L 137.5 140", 'iv')}
+            {drawLine("M 182.5 140 L 237.5 140", 'med')}
+            {drawLine(archXY, 'iv')}
+            {drawLine("M 160 62.5 L 160 85", 'mod')}
+            {drawLine("M 160 62.5 L 110 140", 'mod')}
+            {drawLine("M 160 62.5 L 210 140", 'mod')}
+            {drawNode(60, 140, 'X')}
+            {drawNode(260, 140, 'Y')}
+            {drawNode(160, 140, 'M')}
+            {drawNode(160, 40, 'W')}
+          </>
+        );
+      case 'model83':
+        return svgWrapper(
+          <>
+            {drawLine("M 82.5 140 L 112.5 140", 'iv')}
+            {drawLine("M 157.5 140 L 182.5 140", 'med')}
+            {drawLine("M 227.5 140 L 252.5 140", 'med')}
+            {drawLine(archXY, 'iv')}
+            {drawLine("M 100 62.5 L 100 140", 'mod')}
+            {drawNode(60, 140, 'X')}
+            {drawNode(260, 140, 'Y')}
+            {drawNode(135, 140, 'M1')}
+            {drawNode(205, 140, 'M2')}
+            {drawNode(100, 40, 'W')}
+          </>
+        );
+      case 'model85':
+        return svgWrapper(
+          <>
+            {drawLine("M 82.5 140 L 112.5 140", 'iv')}
+            {drawLine("M 157.5 140 L 182.5 140", 'med')}
+            {drawLine("M 227.5 140 L 252.5 140", 'med')}
+            {drawLine(archXY, 'iv')}
+            {drawLine("M 100 62.5 L 100 140", 'mod')}
+            {drawLine("M 100 62.5 L 160 85", 'mod')}
+            {drawNode(60, 140, 'X')}
+            {drawNode(260, 140, 'Y')}
+            {drawNode(135, 140, 'M1')}
+            {drawNode(205, 140, 'M2')}
+            {drawNode(100, 40, 'W')}
+          </>
+        );
+      case 'model92':
+        return svgWrapper(
+          <>
+            {drawLine("M 82.5 140 L 112.5 140", 'iv')}
+            {drawLine("M 157.5 140 L 182.5 140", 'med')}
+            {drawLine("M 227.5 140 L 252.5 140", 'med')}
+            {drawLine(archXY, 'iv')}
+            {drawLine("M 100 62.5 L 100 140", 'mod')}
+            {drawLine("M 240 62.5 L 240 140", 'mod')}
+            {drawNode(60, 140, 'X')}
+            {drawNode(260, 140, 'Y')}
+            {drawNode(135, 140, 'M1')}
+            {drawNode(205, 140, 'M2')}
+            {drawNode(100, 40, 'W')}
+            {drawNode(240, 40, 'Z')}
+          </>
+        );
+
       case 'empty':
       default:
         return <LayoutTemplate size={48} color="var(--text-muted)" style={{ opacity: 0.5 }} />;
@@ -294,6 +447,16 @@ export const ModelBuilderView: React.FC = () => {
       newEdges.push(createEdge(iv.id, med1.id));
       newEdges.push(createEdge(med1.id, dv.id));
       newEdges.push(createEdge(iv.id, dv.id));
+    } else if (templateId === 'model4_parallel' && iv && dv && med1 && med2) {
+      newNodes.push(createNode(iv, 100, 250, 'iv'));
+      newNodes.push(createNode(med1, 450, 100, 'med'));
+      newNodes.push(createNode(med2, 450, 400, 'med'));
+      newNodes.push(createNode(dv, 800, 250, 'dv'));
+      newEdges.push(createEdge(iv.id, med1.id));
+      newEdges.push(createEdge(med1.id, dv.id));
+      newEdges.push(createEdge(iv.id, med2.id));
+      newEdges.push(createEdge(med2.id, dv.id));
+      newEdges.push(createEdge(iv.id, dv.id));
     } else if (templateId === 'model6' && iv && dv && med1 && med2) {
       newNodes.push(createNode(iv, 100, 250, 'iv'));
       newNodes.push(createNode(med1, 350, 100, 'med'));
@@ -332,6 +495,76 @@ export const ModelBuilderView: React.FC = () => {
       newNodes.push(createNode(mod1, 450, 100, 'mod'));
       createJunction(mod1.id, iv.id, med1.id, 275, 250, 'j-iv-med2');
       createJunction(mod1.id, med1.id, dv.id, 625, 250, 'j-med-dv2');
+    } else if (templateId === 'model2' && iv && dv && mod1 && mod2) {
+      newNodes.push(createNode(iv, 100, 250, 'iv'));
+      newNodes.push(createNode(dv, 800, 250, 'dv'));
+      newNodes.push(createNode(mod1, 300, 100, 'mod'));
+      newNodes.push(createNode(mod2, 600, 100, 'mod'));
+      createJunction(mod1.id, iv.id, dv.id, 300, 250, 'j-iv-dv-w');
+      createJunction(mod2.id, iv.id, dv.id, 600, 250, 'j-iv-dv-z');
+    } else if (templateId === 'model3' && iv && dv && mod1 && mod2) {
+      newNodes.push(createNode(iv, 100, 250, 'iv'));
+      newNodes.push(createNode(dv, 800, 250, 'dv'));
+      newNodes.push(createNode(mod1, 450, 150, 'mod'));
+      newNodes.push(createNode(mod2, 650, 50, 'mod'));
+      createJunction(mod1.id, iv.id, dv.id, 450, 250, 'j-iv-dv-w');
+      createJunction(mod2.id, mod1.id, 'j-iv-dv-w', 450, 200, 'j-mod-mod');
+    } else if (templateId === 'model5' && iv && dv && med1 && mod1) {
+      newNodes.push(createNode(iv, 100, 250, 'iv'));
+      newNodes.push(createNode(med1, 450, 100, 'med'));
+      newNodes.push(createNode(dv, 800, 250, 'dv'));
+      newNodes.push(createNode(mod1, 450, 400, 'mod'));
+      newEdges.push(createEdge(iv.id, med1.id));
+      newEdges.push(createEdge(med1.id, dv.id));
+      createJunction(mod1.id, iv.id, dv.id, 450, 250, 'j-iv-dv');
+    } else if (templateId === 'model15' && iv && dv && med1 && mod1) {
+      newNodes.push(createNode(iv, 100, 250, 'iv'));
+      newNodes.push(createNode(med1, 450, 100, 'med'));
+      newNodes.push(createNode(dv, 800, 250, 'dv'));
+      newNodes.push(createNode(mod1, 650, 250, 'mod'));
+      newEdges.push(createEdge(iv.id, med1.id));
+      createJunction(mod1.id, med1.id, dv.id, 650, 150, 'j-med-dv');
+      createJunction(mod1.id, iv.id, dv.id, 450, 250, 'j-iv-dv');
+    } else if (templateId === 'model59' && iv && dv && med1 && mod1) {
+      newNodes.push(createNode(iv, 100, 250, 'iv'));
+      newNodes.push(createNode(med1, 450, 250, 'med'));
+      newNodes.push(createNode(dv, 800, 250, 'dv'));
+      newNodes.push(createNode(mod1, 450, 100, 'mod'));
+      createJunction(mod1.id, iv.id, med1.id, 275, 250, 'j-iv-med');
+      createJunction(mod1.id, med1.id, dv.id, 625, 250, 'j-med-dv');
+      createJunction(mod1.id, iv.id, dv.id, 450, 400, 'j-iv-dv');
+    } else if (templateId === 'model83' && iv && dv && med1 && med2 && mod1) {
+      newNodes.push(createNode(iv, 100, 250, 'iv'));
+      newNodes.push(createNode(med1, 350, 250, 'med'));
+      newNodes.push(createNode(med2, 550, 250, 'med'));
+      newNodes.push(createNode(dv, 800, 250, 'dv'));
+      newNodes.push(createNode(mod1, 225, 100, 'mod'));
+      createJunction(mod1.id, iv.id, med1.id, 225, 250, 'j-iv-med1');
+      newEdges.push(createEdge(med1.id, med2.id));
+      newEdges.push(createEdge(med2.id, dv.id));
+      newEdges.push(createEdge(iv.id, dv.id));
+    } else if (templateId === 'model85' && iv && dv && med1 && med2 && mod1) {
+      newNodes.push(createNode(iv, 100, 250, 'iv'));
+      newNodes.push(createNode(med1, 350, 250, 'med'));
+      newNodes.push(createNode(med2, 550, 250, 'med'));
+      newNodes.push(createNode(dv, 800, 250, 'dv'));
+      newNodes.push(createNode(mod1, 225, 100, 'mod'));
+      createJunction(mod1.id, iv.id, med1.id, 225, 250, 'j-iv-med1');
+      createJunction(mod1.id, iv.id, dv.id, 450, 400, 'j-iv-dv');
+      newEdges.push(createEdge(med1.id, med2.id));
+      newEdges.push(createEdge(med2.id, dv.id));
+    } else if (templateId === 'model92' && iv && dv && med1 && med2 && mod1 && mod2) {
+      newNodes.push(createNode(iv, 100, 250, 'iv'));
+      newNodes.push(createNode(med1, 350, 250, 'med'));
+      newNodes.push(createNode(med2, 550, 250, 'med'));
+      newNodes.push(createNode(dv, 800, 250, 'dv'));
+      newNodes.push(createNode(mod1, 225, 100, 'mod'));
+      newNodes.push(createNode(mod2, 675, 100, 'mod'));
+      createJunction(mod1.id, iv.id, med1.id, 225, 250, 'j-iv-med1');
+      createJunction(mod2.id, med2.id, dv.id, 675, 250, 'j-med2-dv');
+      newEdges.push(createEdge(med1.id, med2.id));
+      newEdges.push(createEdge(iv.id, dv.id));
+
     } else {
       alert("해당 템플릿을 구성할 변수(IV, DV, MED, MOD)가 충분하지 않거나 누락되었습니다.");
       return;
@@ -631,7 +864,7 @@ export const ModelBuilderView: React.FC = () => {
           display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}>
           <div style={{
-            background: 'var(--bg-base)', width: '800px', borderRadius: '12px',
+            background: 'var(--bg-base)', width: '1200px', borderRadius: '12px',
             boxShadow: '0 10px 25px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column',
             maxHeight: '90vh'
           }}>
@@ -655,16 +888,25 @@ export const ModelBuilderView: React.FC = () => {
               </div>
             </div>
             
-            <div style={{ padding: '24px', overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+            <div style={{ padding: '24px', overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
               {[
                 { id: 'empty', name: '빈 캔버스', desc: '자유롭게 그리기' },
                 { id: 'model1', name: 'Model 1', desc: '단순 조절효과' },
+                { id: 'model2', name: 'Model 2', desc: '이중 조절 (병렬)' },
+                { id: 'model3', name: 'Model 3', desc: '삼중 조절효과' },
                 { id: 'model4', name: 'Model 4', desc: '단순 매개효과' },
+                { id: 'model4_parallel', name: 'Model 4 (병렬 다중 매개)', desc: '다중 병렬 매개' },
+                { id: 'model5', name: 'Model 5', desc: '직접효과 조절된 매개' },
                 { id: 'model6', name: 'Model 6', desc: '이중 매개 (직렬)' },
                 { id: 'model7', name: 'Model 7', desc: '전반부 조절된 매개' },
-                { id: 'model8', name: 'Model 8', desc: '전반/직접 조절' },
+                { id: 'model8', name: 'Model 8', desc: '전반/직접 조절된 매개' },
                 { id: 'model14', name: 'Model 14', desc: '후반부 조절된 매개' },
-                { id: 'model58', name: 'Model 58', desc: '전/후반 조절된 매개' }
+                { id: 'model15', name: 'Model 15', desc: '후반/직접 조절된 매개' },
+                { id: 'model58', name: 'Model 58', desc: '전/후반 조절된 매개' },
+                { id: 'model59', name: 'Model 59', desc: '전/후반/직접 조절된 매개' },
+                { id: 'model83', name: 'Model 83', desc: '직렬매개 + 전반 조절' },
+                { id: 'model85', name: 'Model 85', desc: '직렬매개 + 전반/직접 조절' },
+                { id: 'model92', name: 'Model 92', desc: '직렬매개 + 전/후반 조절' }
               ].map(t => (
                 <div 
                   key={t.id} 
@@ -677,7 +919,7 @@ export const ModelBuilderView: React.FC = () => {
                   onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent-primary)'}
                   onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
                 >
-                  <div style={{ width: '100%', height: '80px', background: 'var(--bg-base)', borderRadius: '4px', border: '1px dashed var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: '100%', height: '180px', background: 'var(--bg-base)', borderRadius: '4px', border: '1px dashed var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {renderThumbnail(t.id)}
                   </div>
                   <div style={{ textAlign: 'center' }}>
