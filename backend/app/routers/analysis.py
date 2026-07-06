@@ -118,6 +118,13 @@ async def perform_efa(request: EFARequest):
         fa.fit(df_selected)
 
         loadings_matrix = fa.loadings_
+        
+        # SPSS 일치: 각 요인(열)에서 절댓값이 가장 큰 적재값의 부호가 음수라면, 해당 요인의 모든 부호를 반전시킵니다.
+        # 방향성만 바뀌는 것이므로 분산설명력 등의 통계적 의미는 동일합니다.
+        for j in range(loadings_matrix.shape[1]):
+            max_idx = np.argmax(np.abs(loadings_matrix[:, j]))
+            if loadings_matrix[max_idx, j] < 0:
+                loadings_matrix[:, j] *= -1
 
         # 공통성(Communality) — 각 항목이 추출된 요인들로 설명되는 비율
         communalities_arr = fa.get_communalities()
@@ -441,10 +448,10 @@ async def perform_correlation(request: CorrelationRequest):
         factor_means[factor.name] = df_f.mean(axis=1)
         names.append(factor.name)
         
-    df_means = pd.DataFrame(factor_means).dropna()
+    df_means = pd.DataFrame(factor_means)
     
     n = len(names)
-    matrix_r = [[1.0]*n for _ in range(n)]
+    matrix_r = [[None]*n for _ in range(n)]
     matrix_p = [[None]*n for _ in range(n)]
     matrix_n = [[0]*n for _ in range(n)]
     

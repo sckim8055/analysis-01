@@ -15,6 +15,8 @@ class UploadResponse(BaseModel):
     filename: str
     columns: List[str]
     row_count: int
+    preview_head: List[Dict[str, Any]] = []
+    preview_tail: List[Dict[str, Any]] = []
 
 @router.post("/upload", response_model=UploadResponse)
 async def upload_file(file: UploadFile = File(...)):
@@ -41,13 +43,71 @@ async def upload_file(file: UploadFile = File(...)):
         os.makedirs("data", exist_ok=True)
         df.to_csv("data/uploaded_data.csv", index=False)
         
+        df_clean = df.fillna("")
         return {
             "project_id": project_id,
             "filename": file.filename,
-            "columns": df.columns.tolist(),
-            "row_count": len(df)
+            "columns": df_clean.columns.tolist(),
+            "row_count": len(df_clean),
+            "preview_head": df_clean.head(5).to_dict(orient='records'),
+            "preview_tail": df_clean.tail(5).to_dict(orient='records')
         }
         
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class ImportUrlRequest(BaseModel):
+    url: str
+
+@router.post("/import_url", response_model=UploadResponse)
+async def import_url(req: ImportUrlRequest):
+    try:
+        url = req.url.strip()
+        if not url:
+            raise HTTPException(status_code=400, detail="URL이 비어 있습니다.")
+            
+        # 구글 스프레드시트 링크 변환
+        # 예: https://docs.google.com/spreadsheets/d/.../edit?usp=sharing -> /export?format=csv
+        if "docs.google.com/spreadsheets" in url:
+            if "/edit" in url:
+                export_url = url.split("/edit")[0] + "/export?format=csv"
+            else:
+                export_url = url + "/export?format=csv" if "?" not in url else url.split("?")[0] + "/export?format=csv"
+        else:
+            export_url = url
+
+        # 웹에서 CSV 다운로드 (pandas로 바로 읽기)
+        try:
+            df = pd.read_csv(export_url, encoding='utf-8')
+        except Exception as e:
+            # utf-8 실패 시 다른 인코딩 시도
+            try:
+                df = pd.read_csv(export_url, encoding='cp949')
+            except Exception:
+                raise HTTPException(status_code=400, detail="링크에서 데이터를 읽을 수 없습니다. (접근 권한이 없거나 지원되지 않는 형식입니다.)")
+                
+        project_id = "test-project-1"
+        filename = "imported_from_url.csv"
+        
+        # 파일명을 안전하게 저장하고 DataFrame을 메모리에 캐시
+        set_project_data(project_id, df, filename)
+        
+        # 다른 곳에서 읽을 수 있도록 파일로도 저장
+        os.makedirs("data", exist_ok=True)
+        df.to_csv("data/uploaded_data.csv", index=False)
+        
+        df_clean = df.fillna("")
+        return {
+            "project_id": project_id,
+            "filename": filename,
+            "columns": df_clean.columns.tolist(),
+            "row_count": len(df_clean),
+            "preview_head": df_clean.head(5).to_dict(orient='records'),
+            "preview_tail": df_clean.tail(5).to_dict(orient='records')
+        }
+        
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -121,6 +181,71 @@ async def recode_data(req: RecodeRequest):
         df.to_csv("data/uploaded_data.csv", index=False)
         
         return {"success": True, "message": "성공적으로 병합되었습니다."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class RecodeMapRequest(BaseModel):
+    column_name: str
+    mappings: Dict[str, Any]
+
+@router.get("/data/distinct/{column_name}")
+async def get_distinct_values(column_name: str):
+    df = _get_active_df()
+    if df is None:
+        raise HTTPException(status_code=404, detail="업로드된 데이터가 없습니다.")
+    if column_name not in df.columns:
+        raise HTTPException(status_code=400, detail="존재하지 않는 컬럼입니다.")
+        
+    try:
+        # Drop NaNs for the unique values list
+        counts = df[column_name].dropna().value_counts().to_dict()
+        result = [{"value": str(k), "count": int(v)} for k, v in counts.items()]
+        return {"data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/data/profiles")
+async def get_data_profiles():
+    df = _get_active_df()
+    if df is None:
+        raise HTTPException(status_code=404, detail="업로드된 데이터가 없습니다.")
+        
+    try:
+        profiles = {}
+        for col in df.columns:
+            counts = df[col].dropna().value_counts().head(10).to_dict()
+            profiles[col] = [{"value": str(k), "count": int(v)} for k, v in counts.items()]
+        return {"data": profiles}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/data/recode_map")
+async def recode_data_map(req: RecodeMapRequest):
+    df = _get_active_df()
+    if df is None:
+        raise HTTPException(status_code=404, detail="업로드된 데이터가 없습니다.")
+        
+    try:
+        if req.column_name not in df.columns:
+            raise HTTPException(status_code=400, detail="존재하지 않는 컬럼입니다.")
+            
+        # mapping dictionary replacement
+        # Convert df column to string if keys are strings, but since keys can be mixed,
+        # pandas replace handles dict gracefully.
+        
+        # We need to ensure types match for replacing. E.g. replacing '55' (str) or 55 (int).
+        # Convert mapping keys to match the column type if possible, or just replace as is.
+        # But safest is replacing exact matches.
+        df[req.column_name] = df[req.column_name].replace(req.mappings)
+        
+        # Try to convert back to numeric if possible
+        df[req.column_name] = pd.to_numeric(df[req.column_name], errors='ignore')
+        
+        # Save back to store and disk
+        set_project_data("test-project-1", df, "uploaded_data.csv")
+        df.to_csv("data/uploaded_data.csv", index=False)
+        
+        return {"success": True, "message": "성공적으로 변환되었습니다."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
