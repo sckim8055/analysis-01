@@ -8,7 +8,7 @@ import { EditableCell } from './components/EditableCell';
 
 export const CleansingView: React.FC = () => {
   const { setCurrentStep } = useUiStore();
-  const { originalColumns, demographicColumns } = useProjectStore();
+  const { originalColumns, demographicColumns, setOriginalColumns } = useProjectStore();
   const addAuditLog = useAnalysisStore(state => state.addAuditLog);
   
   const [activeTab, setActiveTab] = useState<'missing' | 'profiling' | 'reverse'>('missing');
@@ -51,6 +51,12 @@ export const CleansingView: React.FC = () => {
         setColumns(cols);
         setAbnormalCount(resData.abnormal_count || 0);
         setData(resData.data);
+
+        if (originalColumns.length === 0 && resData.columns && resData.columns.length > 0) {
+          const actualCols = resData.columns.filter((c: string) => c !== 'id');
+          setOriginalColumns(actualCols);
+        }
+
         setIsLoading(false);
       })
       .catch(err => {
@@ -248,6 +254,8 @@ export const CleansingView: React.FC = () => {
   const toggleRevCol = (col: string) => {
     setRevSelectedCols(prev => prev.includes(col) ? prev.filter(c => c !== col) : [...prev, col]);
   };
+
+
 
   if (isLoading && data.length === 0) {
     return <div style={{ padding: '40px', textAlign: 'center' }}>데이터를 불러오는 중입니다...</div>;

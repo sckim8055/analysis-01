@@ -15,6 +15,7 @@ scipy==1.11.4
 scikit-learn==1.5.2
 pingouin==0.5.5
 scikit-posthocs==0.9.0
+Pillow==10.2.0
 
 # Real-time & Task Queue
 websockets==14.1

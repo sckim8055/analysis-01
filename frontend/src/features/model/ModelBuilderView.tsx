@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
+import { toPng } from 'html-to-image';
 import ReactFlow, {
   MiniMap,
   Controls,
@@ -39,6 +40,7 @@ export const ModelBuilderView: React.FC = () => {
   const [showHypotheses, setShowHypotheses] = useState(false);
   const [generatedHypotheses, setGeneratedHypotheses] = useState<Hypothesis[]>([]);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const flowWrapperRef = useRef<HTMLDivElement>(null);
 
   // 자동 저장 로직: 노드나 엣지가 변경될 때마다 전역 스토어에 저장
   useEffect(() => {
@@ -662,7 +664,21 @@ export const ModelBuilderView: React.FC = () => {
     });
   };
 
-  const handleProceed = () => {
+  const handleProceed = async () => {
+    // Capture the flow image
+    if (flowWrapperRef.current) {
+      try {
+        const dataUrl = await toPng(flowWrapperRef.current, { backgroundColor: '#ffffff' });
+        useAnalysisStore.getState().setCachedResult('model', {
+          results: { hypotheses: generatedHypotheses },
+          settings: { image: dataUrl },
+          interpretation: '모형 설계 및 가설'
+        });
+      } catch (err) {
+        console.error('Failed to capture model image', err);
+      }
+    }
+
     setShowHypotheses(false);
     setCurrentStep('frequency');
   };
@@ -777,7 +793,7 @@ export const ModelBuilderView: React.FC = () => {
         </div>
 
         {/* 캔버스 영역 */}
-        <div style={{ flex: 1, backgroundColor: 'var(--bg-base)', position: 'relative', overflow: 'hidden' }}>
+        <div ref={flowWrapperRef} style={{ flex: 1, backgroundColor: 'var(--bg-base)', position: 'relative', overflow: 'hidden' }}>
         <ReactFlow
           nodes={nodes}
           edges={edges}

@@ -450,7 +450,7 @@ export const RegressionView: React.FC = () => {
             text += `[모형 ${idx + 1}: ${results.ivParentName} → ${m.dv_name}]\n`;
             const fP = m.f_p_value < 0.001 ? '.000' : m.f_p_value.toFixed(3).replace(/^0\./, '.');
             text += `'${results.ivParentName}'의 하위요인들이 종속변수인 '${m.dv_name}'에 미치는 구체적인 영향력을 분석한 결과, 도출된 회귀모형은 통계적으로 유의미한 수준에서 적합한 것으로 나타났다(F=${m.f_value.toFixed(3)}, p=${fP}). `;
-            text += `모형의 설명력(Explanatory Power)을 직관적으로 보여주는 수정된 결정계수(Adj. R²)는 ${m.adj_r_squared.toFixed(3)}로 산출되었는데, 이는 본 회귀모형에 투입된 독립변수들이 '${m.dv_name}'가 가지는 총 분산의 약 ${(m.adj_r_squared * 100).toFixed(1)}%를 유의미하게 설명하고 있음을 시사한다. 이는 사회과학 연구 분야에서 상당한 수준의 설명력을 확보한 것으로 해석할 수 있다.\n\n`;
+            text += `모형의 설명력(Explanatory Power)을 직관적으로 보여주는 수정된 결정계수(Adj. R²)는 ${m.adj_r_squared.toFixed(3).replace(/^0\./, '.')}로 산출되었는데, 이는 본 회귀모형에 투입된 독립변수들이 '${m.dv_name}'가 가지는 총 분산의 약 ${(m.adj_r_squared * 100).toFixed(1)}%를 유의미하게 설명하고 있음을 시사한다. 이는 사회과학 연구 분야에서 상당한 수준의 설명력을 확보한 것으로 해석할 수 있다.\n\n`;
 
             const sigVars: any[] = [];
             m.coefficients.forEach((c: any) => {
@@ -651,8 +651,8 @@ export const RegressionView: React.FC = () => {
                                                                 )}
                                                                 {cIdx === 0 && (
                                                                     <td rowSpan={m.coefficients.length} style={{ padding: '6px 12px', verticalAlign: 'middle', whiteSpace: 'nowrap', textAlign: 'left', lineHeight: '1.5' }}>
-                                                                        R²={m.r_squared.toFixed(3)}<br />
-                                                                        Adj. R²={m.adj_r_squared.toFixed(3)}<br />
+                                                                        R²={m.r_squared.toFixed(3).replace(/^0\./, '.')}<br />
+                                                                        Adj. R²={m.adj_r_squared.toFixed(3).replace(/^0\./, '.')}<br />
                                                                         F={m.f_value.toFixed(3)}{m.f_p_value < 0.001 ? '***' : m.f_p_value < 0.01 ? '**' : m.f_p_value < 0.05 ? '*' : ''}<br />
                                                                         p={m.f_p_value < 0.001 ? '.000' : m.f_p_value.toFixed(3).replace(/^0\./, '.')}<br />
                                                                         D-W={m.durbin_watson.toFixed(3)}

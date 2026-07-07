@@ -1,9 +1,12 @@
 import pandas as pd
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.drawing.image import Image as OpenpyxlImage
 import json
+import base64
+import io
 
-def generate_excel_report(output_path, request, df):
+def generate_excel_report(output_path, request, df, original_df=None):
     wb = Workbook()
     wb.remove(wb.active)
 
@@ -24,8 +27,18 @@ def generate_excel_report(output_path, request, df):
             cell.alignment = center_align if align == 'center' else left_align
         return cell
 
-    # 1. Audit Logs
-    ws_audit = wb.create_sheet("변경 이력(Data Cleansing)")
+    # 1. Imported Data (Original)
+    if original_df is not None:
+        ws_orig = wb.create_sheet("Imported Data")
+        columns = list(original_df.columns)
+        for c, h in enumerate(columns, 1):
+            format_cell(ws_orig, 1, c, h, is_header=True)
+        for r_idx, row in enumerate(original_df.itertuples(index=False), start=2):
+            for c_idx, val in enumerate(row, start=1):
+                ws_orig.cell(row=r_idx, column=c_idx, value=val)
+
+    # 2. Audit Logs (Data Cleansing & Reverse Coding)
+    ws_audit = wb.create_sheet("데이터 클린징 이력")
     headers = ["시간", "단계", "액션", "상세 내용"]
     for c, h in enumerate(headers, 1):
         format_cell(ws_audit, 1, c, h, is_header=True)
@@ -35,7 +48,10 @@ def generate_excel_report(output_path, request, df):
     ws_audit.column_dimensions['D'].width = 80
     
     if request.auditLogs:
-        for r_idx, log in enumerate(request.auditLogs, start=2):
+        r_idx = 2
+        for log in request.auditLogs:
+            if log.get('step') == '인구통계 설정':
+                continue # 인구통계는 따로 처리
             details = log.get('details', '')
             action = log.get('action', '')
             details_str = ""
@@ -62,11 +78,45 @@ def generate_excel_report(output_path, request, df):
             format_cell(ws_audit, r_idx, 2, log.get('step', ''))
             format_cell(ws_audit, r_idx, 3, action)
             format_cell(ws_audit, r_idx, 4, details_str, align='left')
+            r_idx += 1
+        if r_idx == 2:
+            format_cell(ws_audit, 2, 1, "클린징 기록이 없습니다.")
     else:
-        format_cell(ws_audit, 2, 1, "기록이 없습니다.")
-        for c in range(2, 5): format_cell(ws_audit, 2, c, "")
+        format_cell(ws_audit, 2, 1, "클린징 기록이 없습니다.")
 
-    # 2. Data
+    # 3. Demographics Logs
+    ws_demo = wb.create_sheet("인구통계 이력")
+    for c, h in enumerate(headers, 1):
+        format_cell(ws_demo, 1, c, h, is_header=True)
+    ws_demo.column_dimensions['A'].width = 25
+    ws_demo.column_dimensions['B'].width = 20
+    ws_demo.column_dimensions['C'].width = 30
+    ws_demo.column_dimensions['D'].width = 80
+
+    if request.auditLogs:
+        r_idx = 2
+        for log in request.auditLogs:
+            if log.get('step') != '인구통계 설정':
+                continue
+            details = log.get('details', '')
+            action = log.get('action', '')
+            details_str = ""
+            if isinstance(details, dict):
+                details_str = json.dumps(details, ensure_ascii=False)
+            else:
+                details_str = str(details)
+                
+            format_cell(ws_demo, r_idx, 1, log.get('timestamp', ''))
+            format_cell(ws_demo, r_idx, 2, log.get('step', ''))
+            format_cell(ws_demo, r_idx, 3, action)
+            format_cell(ws_demo, r_idx, 4, details_str, align='left')
+            r_idx += 1
+        if r_idx == 2:
+            format_cell(ws_demo, 2, 1, "인구통계 기록이 없습니다.")
+    else:
+        format_cell(ws_demo, 2, 1, "인구통계 기록이 없습니다.")
+
+    # 4. Cleansed Data
     ws_data = wb.create_sheet("정제된 데이터 (Data)")
     columns = list(df.columns)
     for c, h in enumerate(columns, 1):
@@ -75,8 +125,8 @@ def generate_excel_report(output_path, request, df):
         for c_idx, val in enumerate(row, start=1):
             ws_data.cell(row=r_idx, column=c_idx, value=val)
 
-    # 3. Settings
-    ws_map = wb.create_sheet("설정 및 매핑 (Settings)")
+    # 5. Variable Mapping
+    ws_map = wb.create_sheet("변수 매핑 (Variable Mapping)")
     headers = ["유형", "역할", "매핑된 변수 목록"]
     for c, h in enumerate(headers, 1):
         format_cell(ws_map, 1, c, h, is_header=True)
@@ -98,7 +148,7 @@ def generate_excel_report(output_path, request, df):
                 format_cell(ws_map, r_idx, 3, ", ".join(v.get('itemIds', [])), align='left')
                 r_idx += 1
 
-    # 4. Results
+    # 6. Analysis Results & Model
     if request.cachedResults:
         for key, cache in request.cachedResults.items():
             results = cache.get("results", {})
@@ -111,6 +161,32 @@ def generate_excel_report(output_path, request, df):
             ws.column_dimensions['B'].width = 20
             
             curr_row = 1
+            if key == 'model':
+                ws.title = '모형설계'
+                base64_img = settings.get('image', '')
+                if base64_img:
+                    if ',' in base64_img:
+                        base64_img = base64_img.split(',')[1]
+                    try:
+                        img_data = base64.b64decode(base64_img)
+                        img = OpenpyxlImage(io.BytesIO(img_data))
+                        ws.add_image(img, 'A1')
+                        curr_row += 30 # 이미지 크기에 따라 여백 조절
+                    except Exception as e:
+                        ws.cell(row=curr_row, column=1, value="이미지 로드 실패")
+                        curr_row += 2
+                        
+                # Print hypotheses
+                hypos = results.get('hypotheses', [])
+                if hypos:
+                    ws.cell(row=curr_row, column=1, value="[자동 생성된 가설]").font = header_font
+                    curr_row += 1
+                    for i, h in enumerate(hypos, 1):
+                        ws.cell(row=curr_row, column=1, value=f"가설 {i}: {h.get('text', '')}")
+                        curr_row += 1
+                parsed = True
+                continue
+                
             ws.cell(row=curr_row, column=1, value="[분석 옵션 및 설정]").font = header_font
             curr_row += 1
             for sk, sv in settings.items():
@@ -144,12 +220,12 @@ def generate_excel_report(output_path, request, df):
                             format_cell(ws, curr_row, c_idx, round(comm, 3) if isinstance(comm, float) else comm)
                             curr_row += 1
                         
-                        var_exp = results.get('variance_explained', {})
-                        if var_exp and 'eigenvalues' in var_exp:
+                        var_exp = results.get('variance_explained', [])
+                        if var_exp:
                             format_cell(ws, curr_row, 1, "고유값")
                             c_idx = 2
                             for i, f in enumerate(factors):
-                                val = var_exp['eigenvalues'][i]
+                                val = var_exp[i].get('ss_loadings', 0) if i < len(var_exp) else 0
                                 format_cell(ws, curr_row, c_idx, round(val, 3) if isinstance(val, float) else val)
                                 c_idx += 1
                             format_cell(ws, curr_row, c_idx, "")
@@ -158,7 +234,7 @@ def generate_excel_report(output_path, request, df):
                             format_cell(ws, curr_row, 1, "분산 설명력(%)")
                             c_idx = 2
                             for i, f in enumerate(factors):
-                                val = var_exp['variance_pct'][i]
+                                val = var_exp[i].get('variance_pct', 0) if i < len(var_exp) else 0
                                 format_cell(ws, curr_row, c_idx, round(val, 2) if isinstance(val, float) else val)
                                 c_idx += 1
                             format_cell(ws, curr_row, c_idx, "")
@@ -167,7 +243,7 @@ def generate_excel_report(output_path, request, df):
                             format_cell(ws, curr_row, 1, "누적 설명력(%)")
                             c_idx = 2
                             for i, f in enumerate(factors):
-                                val = var_exp['cumulative_pct'][i]
+                                val = var_exp[i].get('cumulative_pct', 0) if i < len(var_exp) else 0
                                 format_cell(ws, curr_row, c_idx, round(val, 2) if isinstance(val, float) else val)
                                 c_idx += 1
                             format_cell(ws, curr_row, c_idx, "")
@@ -181,116 +257,81 @@ def generate_excel_report(output_path, request, df):
                         parsed = True
                         
                 elif key == 'reliability':
-                    if isinstance(results, dict):
+                    if isinstance(results, list):
                         headers = ["요인", "문항", "항목 삭제시 크론바흐 알파", "크론바흐 알파"]
                         for c, h in enumerate(headers, 1): format_cell(ws, curr_row, c, h, is_header=True)
                         curr_row += 1
                         
-                        for factor, data in results.items():
-                            items = data.get('items', [])
-                            item_alphas = data.get('item_alpha_if_deleted', {})
-                            ca = data.get('cronbach_alpha', '')
-                            if items:
+                        for data in results:
+                            factor = data.get('name', '')
+                            ca = data.get('alpha', '')
+                            item_stats = data.get('item_stats', [])
+                            if item_stats:
                                 format_cell(ws, curr_row, 1, factor)
-                                format_cell(ws, curr_row, 2, items[0])
-                                val = item_alphas.get(items[0], '')
+                                format_cell(ws, curr_row, 2, item_stats[0].get('item', ''))
+                                val = item_stats[0].get('alpha_if_deleted', '')
                                 format_cell(ws, curr_row, 3, round(val, 3) if isinstance(val, float) else val)
                                 format_cell(ws, curr_row, 4, round(ca, 3) if isinstance(ca, float) else ca)
                                 curr_row += 1
-                                for item in items[1:]:
+                                for stat in item_stats[1:]:
                                     format_cell(ws, curr_row, 1, factor)
-                                    format_cell(ws, curr_row, 2, item)
-                                    val = item_alphas.get(item, '')
+                                    format_cell(ws, curr_row, 2, stat.get('item', ''))
+                                    val = stat.get('alpha_if_deleted', '')
                                     format_cell(ws, curr_row, 3, round(val, 3) if isinstance(val, float) else val)
                                     format_cell(ws, curr_row, 4, "")
                                     curr_row += 1
                         parsed = True
-                        
+
                 elif key == 'frequency':
-                    if isinstance(results, dict):
-                        for var_name, data in results.items():
-                            ws.cell(row=curr_row, column=1, value=f"[{var_name}]").font = header_font
+                    for col_name, freqs in results.items():
+                        ws.cell(row=curr_row, column=1, value=f"[{col_name}]").font = header_font
+                        curr_row += 1
+                        headers = ["범주 (Category)", "빈도 (N)", "퍼센트 (%)"]
+                        for c, h in enumerate(headers, 1): format_cell(ws, curr_row, c, h, is_header=True)
+                        curr_row += 1
+                        for f in freqs:
+                            format_cell(ws, curr_row, 1, f.get('category', ''))
+                            format_cell(ws, curr_row, 2, f.get('count', 0))
+                            format_cell(ws, curr_row, 3, round(f.get('percent', 0), 1))
                             curr_row += 1
-                            headers = ["구분", "빈도수(명)", "비율(%)", "유효비율(%)", "누적비율(%)"]
-                            for c, h in enumerate(headers, 1): format_cell(ws, curr_row, c, h, is_header=True)
-                            curr_row += 1
-                            
-                            freq = data.get('frequency', {})
-                            pct = data.get('percent', {})
-                            vpct = data.get('valid_percent', {})
-                            cpct = data.get('cumulative_percent', {})
-                            
-                            for cat in freq.keys():
-                                if cat in ['Total', 'Missing']: continue
-                                format_cell(ws, curr_row, 1, str(cat))
-                                format_cell(ws, curr_row, 2, freq.get(cat, ''))
-                                format_cell(ws, curr_row, 3, round(pct.get(cat, 0), 1))
-                                format_cell(ws, curr_row, 4, round(vpct.get(cat, 0), 1))
-                                format_cell(ws, curr_row, 5, round(cpct.get(cat, 0), 1))
-                                curr_row += 1
-                                
-                            format_cell(ws, curr_row, 1, "Total(Valid)")
-                            format_cell(ws, curr_row, 2, freq.get('Total', ''))
-                            format_cell(ws, curr_row, 3, round(pct.get('Total', 0), 1))
-                            format_cell(ws, curr_row, 4, "100.0")
-                            format_cell(ws, curr_row, 5, "")
-                            curr_row += 1
-                            
-                            if 'Missing' in freq and freq['Missing'] > 0:
-                                format_cell(ws, curr_row, 1, "Missing")
-                                format_cell(ws, curr_row, 2, freq.get('Missing', ''))
-                                format_cell(ws, curr_row, 3, round(pct.get('Missing', 0), 1))
-                                format_cell(ws, curr_row, 4, "")
-                                format_cell(ws, curr_row, 5, "")
-                                curr_row += 1
-                            curr_row += 1
-                        parsed = True
+                        curr_row += 1
+                    parsed = True
 
                 elif key == 'ttest':
-                    if 'diff_results' in results:
-                        for diff in results['diff_results']:
-                            demo = diff.get('demographic', '')
-                            ws.cell(row=curr_row, column=1, value=f"인구통계 변수: {demo}").font = header_font
+                    if 'results' in results:
+                        for dv_name, tests in results['results'].items():
+                            ws.cell(row=curr_row, column=1, value=f"종속변수: {dv_name}").font = header_font
                             curr_row += 1
-                            
-                            headers = ["측정 변수", "구분", "N", "평균", "표준편차", "t/F값", "유의확률(p)"]
-                            has_posthoc = any(f.get('post_hoc') for f in diff.get('factors', {}).values())
-                            if has_posthoc:
-                                headers.append("사후검정")
+                            headers = ["독립변수", "집단", "N", "평균", "표준편차", "t/F", "p-value", "사후검정"]
                             for c, h in enumerate(headers, 1): format_cell(ws, curr_row, c, h, is_header=True)
                             curr_row += 1
-                            
-                            for f_name, f_data in diff.get('factors', {}).items():
-                                groups = f_data.get('groups', [])
-                                stat = f_data.get('statistic')
-                                p = f_data.get('p_value')
-                                ph = f_data.get('post_hoc', '')
-                                
-                                stat_str = round(stat, 3) if isinstance(stat, float) else stat
-                                p_str = round(p, 3) if isinstance(p, float) else p
+                            for test in tests:
+                                iv_name = test.get('iv_name', '')
+                                method = test.get('method', '')
+                                groups = test.get('groups', [])
+                                has_posthoc = 'posthoc' in test and test['posthoc']
                                 
                                 if groups:
-                                    g0 = groups[0]
-                                    format_cell(ws, curr_row, 1, f_name)
-                                    format_cell(ws, curr_row, 2, g0.get('group_name'))
-                                    format_cell(ws, curr_row, 3, g0.get('n'))
-                                    format_cell(ws, curr_row, 4, round(g0.get('mean'), 3) if isinstance(g0.get('mean'), float) else g0.get('mean'))
-                                    format_cell(ws, curr_row, 5, round(g0.get('sd'), 3) if isinstance(g0.get('sd'), float) else g0.get('sd'))
-                                    format_cell(ws, curr_row, 6, stat_str)
-                                    format_cell(ws, curr_row, 7, p_str)
-                                    if has_posthoc:
-                                        format_cell(ws, curr_row, 8, ph)
-                                    curr_row += 1
-                                    
-                                    for g in groups[1:]:
-                                        format_cell(ws, curr_row, 1, f_name)
+                                    for i, g in enumerate(groups):
+                                        format_cell(ws, curr_row, 1, iv_name if i == 0 else "")
                                         format_cell(ws, curr_row, 2, g.get('group_name'))
                                         format_cell(ws, curr_row, 3, g.get('n'))
                                         format_cell(ws, curr_row, 4, round(g.get('mean'), 3) if isinstance(g.get('mean'), float) else g.get('mean'))
                                         format_cell(ws, curr_row, 5, round(g.get('sd'), 3) if isinstance(g.get('sd'), float) else g.get('sd'))
-                                        format_cell(ws, curr_row, 6, "")
-                                        format_cell(ws, curr_row, 7, "")
-                                        if has_posthoc: format_cell(ws, curr_row, 8, "")
+                                        
+                                        if i == 0:
+                                            stat_val = test.get('t_stat') if method == 't-test' else test.get('f_stat')
+                                            format_cell(ws, curr_row, 6, round(stat_val, 3) if isinstance(stat_val, float) else stat_val)
+                                            p_val = test.get('p_value')
+                                            format_cell(ws, curr_row, 7, round(p_val, 3) if isinstance(p_val, float) else p_val)
+                                            if has_posthoc:
+                                                format_cell(ws, curr_row, 8, ", ".join(test['posthoc']) if isinstance(test['posthoc'], list) else str(test['posthoc']))
+                                            else:
+                                                format_cell(ws, curr_row, 8, "")
+                                        else:
+                                            format_cell(ws, curr_row, 6, "")
+                                            format_cell(ws, curr_row, 7, "")
+                                            format_cell(ws, curr_row, 8, "")
                                         curr_row += 1
                             curr_row += 1
                         parsed = True
@@ -331,19 +372,21 @@ def generate_excel_report(output_path, request, df):
                 elif key.startswith('regression'):
                     if 'models' in results:
                         for idx, model in enumerate(results['models'], 1):
-                            ws.cell(row=curr_row, column=1, value=f"[Model {idx}] {model.get('model_name', '')}").font = header_font
+                            ws.cell(row=curr_row, column=1, value=f"[Model {idx}] 종속변수: {model.get('dv_name', '')}").font = header_font
                             curr_row += 1
                             
-                            ms = model.get('model_summary', {})
                             headers = ["R", "R²", "Adj R²", "F값", "유의확률(p)"]
                             for c, h in enumerate(headers, 1): format_cell(ws, curr_row, c, h, is_header=True)
                             curr_row += 1
                             
-                            format_cell(ws, curr_row, 1, round(ms.get('r', 0), 3))
-                            format_cell(ws, curr_row, 2, round(ms.get('r_square', 0), 3))
-                            format_cell(ws, curr_row, 3, round(ms.get('adj_r_square', 0), 3))
-                            format_cell(ws, curr_row, 4, round(ms.get('f_stat', 0), 3))
-                            format_cell(ws, curr_row, 5, round(ms.get('p_value', 1), 3))
+                            r_squared = model.get('r_squared', 0)
+                            r_val = r_squared ** 0.5 if r_squared > 0 else 0
+                            
+                            format_cell(ws, curr_row, 1, f"{r_val:.3f}".replace("0.", "."))
+                            format_cell(ws, curr_row, 2, f"{r_squared:.3f}".replace("0.", "."))
+                            format_cell(ws, curr_row, 3, f"{model.get('adj_r_squared', 0):.3f}".replace("0.", "."))
+                            format_cell(ws, curr_row, 4, round(model.get('f_value', 0), 3))
+                            format_cell(ws, curr_row, 5, round(model.get('f_p_value', 1), 3))
                             curr_row += 2
                             
                             headers = ["독립변수", "B", "표준오차", "Beta", "t값", "유의확률(p)", "VIF"]
@@ -353,10 +396,10 @@ def generate_excel_report(output_path, request, df):
                             for coef in model.get('coefficients', []):
                                 format_cell(ws, curr_row, 1, coef.get('name', ''))
                                 format_cell(ws, curr_row, 2, round(coef.get('B', 0), 3))
-                                format_cell(ws, curr_row, 3, round(coef.get('std_err', 0), 3))
+                                format_cell(ws, curr_row, 3, round(coef.get('SE', 0), 3))
                                 format_cell(ws, curr_row, 4, round(coef.get('beta', 0), 3) if coef.get('beta') is not None else "")
-                                format_cell(ws, curr_row, 5, round(coef.get('t_stat', 0), 3))
-                                format_cell(ws, curr_row, 6, round(coef.get('p_value', 1), 3))
+                                format_cell(ws, curr_row, 5, round(coef.get('t', 0), 3))
+                                format_cell(ws, curr_row, 6, round(coef.get('p', 1), 3))
                                 format_cell(ws, curr_row, 7, round(coef.get('vif', 0), 3) if coef.get('vif') is not None else "")
                                 curr_row += 1
                             curr_row += 1
@@ -400,7 +443,8 @@ def generate_excel_report(output_path, request, df):
                                         format_cell(ws, curr_row, 1, "R²")
                                         for i, mod_key in enumerate(['model1', 'model2', 'model3']):
                                             val = m.get(mod_key, {}).get('model_summary', {}).get('r_square', '')
-                                            format_cell(ws, curr_row, i+2, round(val, 3) if isinstance(val, float) else val)
+                                            val_str = f"{val:.3f}".replace("0.", ".") if isinstance(val, (int, float)) else val
+                                            format_cell(ws, curr_row, i+2, val_str)
                                         curr_row += 1
                                         
                                         format_cell(ws, curr_row, 1, "F값")
@@ -513,15 +557,17 @@ def generate_excel_report(output_path, request, df):
                 traceback.print_exc()
                 parsed = False
                 
-            if not parsed:
-                ws.cell(row=curr_row, column=1, value=json.dumps(results, ensure_ascii=False))
+            if interpretation:
+                ws.cell(row=curr_row, column=1, value="[분석 결과 해석 (APA 가이드라인)]").font = header_font
                 curr_row += 1
-                
-            curr_row += 1
-            ws.cell(row=curr_row, column=1, value="[자동 해석 및 결론]").font = header_font
-            curr_row += 1
-            for line in interpretation.split("\\n"):
-                ws.cell(row=curr_row, column=1, value=line)
+                lines = interpretation.split('\n')
+                for line in lines:
+                    ws.cell(row=curr_row, column=1, value=line)
+                    curr_row += 1
                 curr_row += 1
 
+            if not parsed:
+                # 에러 또는 기타 알 수 없는 포맷인 경우 원시 JSON 덤프
+                ws.cell(row=curr_row, column=1, value=json.dumps(results, ensure_ascii=False, indent=2))
+                
     wb.save(output_path)

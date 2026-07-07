@@ -62,8 +62,8 @@ export const ModeratedMediationTable = ({ results, onExport, isExporting }: { re
                         })}
                         <tr style={{ borderBottom: '1px solid var(--border-color)', borderTop: '1px solid var(--text-primary)' }}>
                             <td colSpan={2} style={{ padding: '8px', borderRight: '1px solid var(--border-color)' }}>R²</td>
-                            <td colSpan={3} style={{ padding: '8px', borderRight: '1px solid var(--border-color)' }}>{m.r_squared.toFixed(3)}</td>
-                            <td colSpan={3} style={{ padding: '8px' }}>{y.r_squared.toFixed(3)}</td>
+                            <td colSpan={3} style={{ padding: '8px', borderRight: '1px solid var(--border-color)' }}>{m.r_squared.toFixed(3).replace(/^0\./, '.')}</td>
+                            <td colSpan={3} style={{ padding: '8px' }}>{y.r_squared.toFixed(3).replace(/^0\./, '.')}</td>
                         </tr>
                         <tr style={{ borderBottom: '2px solid var(--text-primary)' }}>
                             <td colSpan={2} style={{ padding: '8px', borderRight: '1px solid var(--border-color)' }}>F</td>

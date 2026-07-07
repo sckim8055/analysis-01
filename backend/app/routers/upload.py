@@ -39,10 +39,6 @@ async def upload_file(file: UploadFile = File(...)):
         # 파일명을 안전하게 저장하고 DataFrame을 메모리에 캐시
         set_project_data(project_id, df, file.filename)
         
-        # analysis.py 등 다른 곳에서 읽을 수 있도록 파일로도 저장
-        os.makedirs("data", exist_ok=True)
-        df.to_csv("data/uploaded_data.csv", index=False)
-        
         df_clean = df.fillna("")
         return {
             "project_id": project_id,
@@ -91,10 +87,6 @@ async def import_url(req: ImportUrlRequest):
         
         # 파일명을 안전하게 저장하고 DataFrame을 메모리에 캐시
         set_project_data(project_id, df, filename)
-        
-        # 다른 곳에서 읽을 수 있도록 파일로도 저장
-        os.makedirs("data", exist_ok=True)
-        df.to_csv("data/uploaded_data.csv", index=False)
         
         df_clean = df.fillna("")
         return {
@@ -147,13 +139,7 @@ async def get_smart_data():
     }
 
 def _get_active_df():
-    df = get_project_data("test-project-1")
-    if df is None:
-        file_path = "data/uploaded_data.csv"
-        if os.path.exists(file_path):
-            df = pd.read_csv(file_path)
-            set_project_data("test-project-1", df, "uploaded_data.csv")
-    return df
+    return get_project_data("test-project-1")
 
 class RecodeRequest(BaseModel):
     column_name: str
@@ -177,8 +163,6 @@ async def recode_data(req: RecodeRequest):
         df[req.column_name] = df[req.column_name].replace(req.old_values, req.new_value)
         
         # Save back to store and disk
-        set_project_data("test-project-1", df, "uploaded_data.csv")
-        df.to_csv("data/uploaded_data.csv", index=False)
         
         return {"success": True, "message": "성공적으로 병합되었습니다."}
     except Exception as e:
@@ -242,8 +226,6 @@ async def recode_data_map(req: RecodeMapRequest):
         df[req.column_name] = pd.to_numeric(df[req.column_name], errors='ignore')
         
         # Save back to store and disk
-        set_project_data("test-project-1", df, "uploaded_data.csv")
-        df.to_csv("data/uploaded_data.csv", index=False)
         
         return {"success": True, "message": "성공적으로 변환되었습니다."}
     except Exception as e:
@@ -269,8 +251,6 @@ async def drop_data_values(req: DropValuesRequest):
         new_len = len(df)
         
         # Save back to store and disk
-        set_project_data("test-project-1", df, "uploaded_data.csv")
-        df.to_csv("data/uploaded_data.csv", index=False)
         
         return {
             "success": True, 
@@ -302,8 +282,6 @@ async def update_cell(req: UpdateCellRequest):
         df.at[req.row_id, req.column_name] = req.new_value
         
         # Save back to store and disk
-        set_project_data("test-project-1", df, "uploaded_data.csv")
-        df.to_csv("data/uploaded_data.csv", index=False)
         
         return {"success": True, "message": "셀이 성공적으로 수정되었습니다."}
     except Exception as e:
@@ -329,8 +307,6 @@ async def reverse_code(req: ReverseCodeRequest):
             df[col] = (req.max_val + req.min_val) - df[col]
             
         # Save back to store and disk
-        set_project_data("test-project-1", df, "uploaded_data.csv")
-        df.to_csv("data/uploaded_data.csv", index=False)
         
         return {"success": True, "message": "성공적으로 역코딩되었습니다."}
     except Exception as e:

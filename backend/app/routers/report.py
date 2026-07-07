@@ -1,4 +1,6 @@
+from ..store import get_project_data
 from fastapi import APIRouter, HTTPException
+from ..store import get_project_data
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
@@ -73,11 +75,10 @@ def add_analysis_results_to_word(doc, cached_results: Dict[str, Any]):
 
 @router.post("/full-report")
 async def generate_full_report(request: ReportConfig):
-    file_path = "data/uploaded_data.csv"
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=400, detail="데이터 파일이 없습니다.")
-    
-    df = pd.read_csv(file_path)
+    df = get_project_data("test-project-1")
+    original_df = get_project_data("test-project-1", original=True)
+    if df is None:
+        raise HTTPException(status_code=400, detail="데이터가 메모리에 존재하지 않습니다. 먼저 업로드해주세요.")
     
     if request.format == 'word':
         doc = Document()
@@ -99,7 +100,7 @@ async def generate_full_report(request: ReportConfig):
     elif request.format == 'excel':
         output_path = "data/Full_Report.xlsx"
         try:
-            generate_excel_report(output_path, request, df)
+            generate_excel_report(output_path, request, df, original_df)
         except Exception as e:
             import traceback
             traceback.print_exc()

@@ -80,15 +80,15 @@ export const ModerationTable = ({ results, onExport, isExporting }: { results: a
                         </tr>
                         <tr style={{ backgroundColor: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)' }}>
                             <td style={{ padding: '8px', borderRight: '1px solid var(--border-color)' }}>R²</td>
-                            <td colSpan={3} style={{ padding: '8px', borderRight: '1px solid var(--border-color)' }}>{m1.r_squared.toFixed(3)}</td>
-                            <td colSpan={3} style={{ padding: '8px', borderRight: '1px solid var(--border-color)' }}>{m2.r_squared.toFixed(3)}</td>
-                            <td colSpan={3} style={{ padding: '8px' }}>{m3.r_squared.toFixed(3)}</td>
+                            <td colSpan={3} style={{ padding: '8px', borderRight: '1px solid var(--border-color)' }}>{m1.r_squared.toFixed(3).replace(/^0\./, '.')}</td>
+                            <td colSpan={3} style={{ padding: '8px', borderRight: '1px solid var(--border-color)' }}>{m2.r_squared.toFixed(3).replace(/^0\./, '.')}</td>
+                            <td colSpan={3} style={{ padding: '8px' }}>{m3.r_squared.toFixed(3).replace(/^0\./, '.')}</td>
                         </tr>
                         <tr style={{ backgroundColor: 'var(--bg-surface)' }}>
                             <td style={{ padding: '8px', borderRight: '1px solid var(--border-color)' }}>Change of R²</td>
                             <td colSpan={3} style={{ padding: '8px', borderRight: '1px solid var(--border-color)' }}>-</td>
-                            <td colSpan={3} style={{ padding: '8px', borderRight: '1px solid var(--border-color)' }}>{m2.delta_r_squared.toFixed(3)}</td>
-                            <td colSpan={3} style={{ padding: '8px' }}>{m3.delta_r_squared.toFixed(3)}</td>
+                            <td colSpan={3} style={{ padding: '8px', borderRight: '1px solid var(--border-color)' }}>{m2.delta_r_squared.toFixed(3).replace(/^0\./, '.')}</td>
+                            <td colSpan={3} style={{ padding: '8px' }}>{m3.delta_r_squared.toFixed(3).replace(/^0\./, '.')}</td>
                         </tr>
                     </tbody>
                 </table>

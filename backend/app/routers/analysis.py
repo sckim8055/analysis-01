@@ -1,3 +1,4 @@
+from ..store import get_project_data
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
@@ -48,13 +49,13 @@ class EFAResponse(BaseModel):
 
 @router.post("/efa", response_model=EFAResponse)
 async def perform_efa(request: EFARequest):
-    file_path = "data/uploaded_data.csv"
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=400, detail="데이터 파일이 존재하지 않습니다. 먼저 업로드해주세요.")
+    df = get_project_data("test-project-1")
+    if df is None:
+        raise HTTPException(status_code=400, detail="데이터가 존재하지 않습니다. 먼저 데이터를 업로드해주세요.")
     
     try:
         # 1. 데이터 로드 및 전처리
-        df = pd.read_csv(file_path)
+        # df = get_project_data("test-project-1") (이미 위에서 로드함)
         
         # 선택된 컬럼만 필터링
         missing_cols = [col for col in request.columns if col not in df.columns]
@@ -208,11 +209,9 @@ class FrequencyResponse(BaseModel):
 
 @router.post("/frequency", response_model=FrequencyResponse)
 async def perform_frequency(request: FrequencyRequest):
-    file_path = "data/uploaded_data.csv"
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=400, detail="데이터 파일이 없습니다.")
-    
-    df = pd.read_csv(file_path)
+    df = get_project_data("test-project-1")
+    if df is None:
+        raise HTTPException(status_code=400, detail="데이터가 메모리에 존재하지 않습니다. 먼저 업로드해주세요.")
     frequencies = {}
     
     for col in request.columns:
@@ -258,15 +257,14 @@ async def perform_frequency(request: FrequencyRequest):
             
     return FrequencyResponse(frequencies=frequencies)
 
+from ..store import get_project_data
 from fastapi.responses import FileResponse
 
 @router.post("/frequency/export")
 async def export_frequency(request: FrequencyRequest):
-    file_path = "data/uploaded_data.csv"
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=400, detail="데이터 파일이 없습니다.")
-    
-    df = pd.read_csv(file_path)
+    df = get_project_data("test-project-1")
+    if df is None:
+        raise HTTPException(status_code=400, detail="데이터가 메모리에 존재하지 않습니다. 먼저 업로드해주세요.")
     rows = []
     
     for col in request.columns:
@@ -322,11 +320,9 @@ class ReliabilityResponse(BaseModel):
 
 @router.post("/reliability", response_model=ReliabilityResponse)
 async def perform_reliability(request: ReliabilityRequest):
-    file_path = "data/uploaded_data.csv"
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=400, detail="데이터 파일이 없습니다.")
-    
-    df = pd.read_csv(file_path)
+    df = get_project_data("test-project-1")
+    if df is None:
+        raise HTTPException(status_code=400, detail="데이터가 메모리에 존재하지 않습니다. 먼저 업로드해주세요.")
     results = []
     
     for factor in request.factors:
@@ -431,11 +427,9 @@ class CorrelationResponse(BaseModel):
 
 @router.post("/correlation", response_model=CorrelationResponse)
 async def perform_correlation(request: CorrelationRequest):
-    file_path = "data/uploaded_data.csv"
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=400, detail="데이터 파일이 없습니다.")
-    
-    df = pd.read_csv(file_path)
+    df = get_project_data("test-project-1")
+    if df is None:
+        raise HTTPException(status_code=400, detail="데이터가 메모리에 존재하지 않습니다. 먼저 업로드해주세요.")
     
     # 각 요인별 평균 점수 계산
     factor_means = {}
@@ -564,11 +558,9 @@ async def perform_difference(request: DifferenceRequest):
         raise e
 
 async def _perform_difference(request: DifferenceRequest):
-    file_path = "data/uploaded_data.csv"
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=400, detail="데이터 파일이 없습니다.")
-    
-    df = pd.read_csv(file_path)
+    df = get_project_data("test-project-1")
+    if df is None:
+        raise HTTPException(status_code=400, detail="데이터가 메모리에 존재하지 않습니다. 먼저 업로드해주세요.")
     
     # Calculate factor means
     factor_means = {}
@@ -788,11 +780,9 @@ class RegressionResponse(BaseModel):
 
 @router.post("/regression", response_model=RegressionResponse)
 async def perform_regression(request: RegressionRequest):
-    file_path = "data/uploaded_data.csv"
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=400, detail="데이터 파일이 없습니다.")
-    
-    df = pd.read_csv(file_path)
+    df = get_project_data("test-project-1")
+    if df is None:
+        raise HTTPException(status_code=400, detail="데이터가 메모리에 존재하지 않습니다. 먼저 업로드해주세요.")
     
     # Calculate means for IVs and DVs
     iv_data = {}
@@ -931,11 +921,9 @@ class MediationRequest(BaseModel):
 
 @router.post("/mediation")
 async def perform_mediation(request: MediationRequest):
-    file_path = "data/uploaded_data.csv"
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=400, detail="데이터 파일이 없습니다.")
-        
-    df = pd.read_csv(file_path)
+    df = get_project_data("test-project-1")
+    if df is None:
+        raise HTTPException(status_code=400, detail="데이터가 메모리에 존재하지 않습니다. 먼저 업로드해주세요.")
     
     try:
         ivs_data = [{"name": iv.name, "items": iv.items} for iv in request.ivs]

@@ -589,7 +589,7 @@ export const MediationView: React.FC = () => {
                                             </tr>
                                             <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
                                                 <td colSpan={2} style={{ padding: '8px', borderRight: '1px solid var(--border-color)' }}>R² (3단계)</td>
-                                                {models.map((m: any) => <td colSpan={3} key={m.med_name} style={{ padding: '8px', borderLeft: '1px solid var(--border-color)' }}>{m.step3.r_squared.toFixed(3)}</td>)}
+                                                {models.map((m: any) => <td colSpan={3} key={m.med_name} style={{ padding: '8px', borderLeft: '1px solid var(--border-color)' }}>{m.step3.r_squared.toFixed(3).replace(/^0\./, '.')}</td>)}
                                             </tr>
                                             <tr>
                                                 <td colSpan={2} style={{ padding: '8px', borderRight: '1px solid var(--border-color)' }}>채택유무</td>
