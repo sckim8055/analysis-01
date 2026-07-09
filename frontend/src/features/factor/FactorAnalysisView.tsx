@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAnalysisStore } from '../../store/analysisStore';
 import { useUiStore } from '../../store/uiStore';
 import { useProjectStore } from '../../store/projectStore';
-import { Check, RefreshCw, Layers, MinusCircle, PlusCircle, Settings2 } from 'lucide-react';
+import { Check, RefreshCw, Layers, MinusCircle, PlusCircle, Settings2, Download } from 'lucide-react';
 import type { Variable, VarType } from '../../types';
 export interface MockMatrixItem {
   id: string;
@@ -11,6 +11,8 @@ export interface MockMatrixItem {
 }
 import { FactorMatrixTable } from './components/FactorMatrixTable';
 import { FactorAnalysisOptions } from './components/FactorAnalysisOptions';
+import { formatStatNumber } from '../../utils/formatters';
+import { exportHtmlTableToExcel } from '../../utils/excelExport';
 
 export const FactorAnalysisView: React.FC = () => {
   const { 
@@ -496,9 +498,35 @@ export const FactorAnalysisView: React.FC = () => {
                   <div style={{ padding: '16px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <h3 className="text-h3">자동 분석 결과</h3>
                     {!isAnalyzing && kmoValue !== null && (
-                      <span className="text-small" style={{ color: 'var(--accent-primary)' }}>
-                        KMO: {kmoValue.toFixed(3)} | 누적 분산설명력: {varianceValue?.toFixed(1)}%
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <span className="text-small" style={{ color: 'var(--accent-primary)' }}>
+                          KMO: {formatStatNumber(kmoValue)} | 누적 분산설명력: {varianceValue?.toFixed(1)}%
+                        </span>
+                        <button 
+                          className="btn-secondary" 
+                          style={{ padding: '4px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                          onClick={() => {
+                            const filename = `요인분석_${activeVarContext?.v.name || '결과'}.xlsx`;
+                            
+                            const opt_extraction = factorSettings.extraction === 'pca' ? '주성분분석' : (factorSettings.extraction === 'efa' ? '공통요인분석' : factorSettings.extraction);
+                            const opt_rotation = factorSettings.rotation === 'varimax' ? '배리맥스' : factorSettings.rotation;
+                            const appendTexts = [
+                              `• 요인추출: ${opt_extraction}`,
+                              `• 요인회전: ${opt_rotation}`,
+                              `• 요인적재값: ${factorSettings.loading} 이상`,
+                              `• 공통성: ${factorSettings.communality} 이상`,
+                              `• 분산설명력: ${factorSettings.variance}% 이상`,
+                              `• KMO: ${factorSettings.kmo} 이상`,
+                              '',
+                              `KMO=${formatStatNumber(kmoValue)}, Bartlett's test결과 χ²=${bartlettData?.chi.toFixed(3)} (df=${bartlettData?.df}, p=${formatStatNumber(bartlettData?.p)})`
+                            ];
+                            
+                            exportHtmlTableToExcel(filename.replace('.xlsx', ''), filename, ['factor-matrix-table'], appendTexts);
+                          }}
+                        >
+                          <Download size={14} /> 엑셀 저장
+                        </button>
+                      </div>
                     )}
                   </div>
                   <div style={{ flex: 1, padding: '16px', overflowY: 'auto', position: 'relative' }}>

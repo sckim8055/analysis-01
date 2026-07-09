@@ -72,7 +72,7 @@ export const FactorMatrixTable: React.FC<FactorMatrixTableProps> = ({
       </div>
 
       <div style={{ overflowX: 'auto', borderTop: '2px solid var(--accent-light)' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', textAlign: 'center', backgroundColor: 'var(--bg-surface)' }}>
+        <table id="factor-matrix-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', textAlign: 'center', backgroundColor: 'var(--bg-surface)' }}>
           <thead>
             <tr>
               <th style={thStyle}>구성<br/>요인</th>
@@ -160,9 +160,9 @@ export const FactorMatrixTable: React.FC<FactorMatrixTableProps> = ({
         {/* Footer (KMO & Bartlett) */}
         {(kmoValue !== null || bartlettData) && (
           <div style={{ marginTop: '8px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            {kmoValue !== null && `KMO=${kmoValue.toFixed(3)}`}
+            {kmoValue !== null && `KMO=${formatStatNumber(kmoValue)}`}
             {kmoValue !== null && bartlettData && ", "}
-            {bartlettData && `Bartlett's test결과 χ²=${bartlettData.chi.toFixed(3)} (df=${bartlettData.df}, p=${bartlettData.p.toFixed(3)})`}
+            {bartlettData && `Bartlett's test결과 χ²=${bartlettData.chi.toFixed(3)} (df=${bartlettData.df}, p=${formatStatNumber(bartlettData.p)})`}
           </div>
         )}
       </div>

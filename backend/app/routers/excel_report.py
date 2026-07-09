@@ -16,6 +16,19 @@ def generate_excel_report(output_path, request, df, original_df=None):
     left_align = Alignment(horizontal="left", vertical="center")
     thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
 
+    def format_stat(val, digits=3):
+        if val is None or val == '': return ''
+        try:
+            f_val = float(val)
+            s = f"{abs(f_val):.{digits}f}"
+            if f_val < 0:
+                s = f"-{s}"
+            if abs(f_val) < 1.0:
+                s = s.replace("0.", ".", 1) if not s.startswith("-") else s.replace("-0.", "-.", 1)
+            return s
+        except (ValueError, TypeError):
+            return val
+
     def format_cell(ws, row, col, value, is_header=False, align='center'):
         cell = ws.cell(row=row, column=col, value=value)
         cell.border = thin_border
@@ -202,11 +215,6 @@ def generate_excel_report(output_path, request, df, original_df=None):
             try:
                 if key == 'efa':
                     if 'loadings' in results:
-                        # 분석 옵션 요약
-                        curr_row += 1
-                        ws.cell(row=curr_row, column=1, value=f"[분석 옵션: 주성분분석, 회전={settings.get('rotation', 'varimax')}, 고유값={settings.get('eigenvalueThreshold', 1.0)}이상, 적재값={settings.get('loading', 0.5)}이상, 공통성={settings.get('communality', 0.4)}이상]")
-                        curr_row += 2
-                        
                         loadings = results['loadings']
                         factors = list(list(loadings.values())[0].keys()) if loadings else []
                         headers = ["구성요인", "설문문항"] + factors + ["공통성"]
@@ -248,12 +256,12 @@ def generate_excel_report(output_path, request, df, original_df=None):
                                 c_idx = 3
                                 for f_col in factors:
                                     val = loadings[item].get(f_col, '')
-                                    format_cell(ws, curr_row, c_idx, round(val, 3) if isinstance(val, float) else val)
+                                    format_cell(ws, curr_row, c_idx, format_stat(val, 3))
                                     c_idx += 1
                                     
                                 # 공통성
                                 comm = results.get('communalities', {}).get(item, '')
-                                format_cell(ws, curr_row, c_idx, round(comm, 3) if isinstance(comm, float) else comm)
+                                format_cell(ws, curr_row, c_idx, format_stat(comm, 3))
                                 curr_row += 1
                             
                             # 병합 (rowSpan 효과)
@@ -295,7 +303,31 @@ def generate_excel_report(output_path, request, df, original_df=None):
                             format_cell(ws, curr_row, c_idx, "")
                             curr_row += 1
                         curr_row += 1
-                        ws.cell(row=curr_row, column=1, value=f"KMO={round(results.get('kmo',0),3)}, Bartlett's test결과 χ²={round(results.get('bartlett_chi_square',0),3)} (df={results.get('bartlett_df',0)}, p={round(results.get('bartlett_p_value',1),3)})")
+                        
+                        # Options summary list
+                        opt_extraction = "주성분분석" if settings.get('extraction') == 'pca' else settings.get('extraction', '주성분분석')
+                        opt_rotation = "배리맥스" if settings.get('rotation') == 'varimax' else settings.get('rotation', '배리맥스')
+                        opt_loading = settings.get('loading', 0.5)
+                        opt_communality = settings.get('communality', 0.4)
+                        opt_variance = settings.get('variance', 60)
+                        opt_kmo_limit = settings.get('kmo', 0.5)
+                        
+                        options_text = [
+                            f"• 요인추출: {opt_extraction}",
+                            f"• 요인회전: {opt_rotation}",
+                            f"• 요인적재값: {opt_loading} 이상",
+                            f"• 공통성: {opt_communality} 이상",
+                            f"• 분산설명력: {opt_variance}% 이상",
+                            f"• KMO: {opt_kmo_limit} 이상"
+                        ]
+                        
+                        for txt in options_text:
+                            ws.cell(row=curr_row, column=1, value=txt)
+                            ws.merge_cells(start_row=curr_row, start_column=1, end_row=curr_row, end_column=len(headers))
+                            curr_row += 1
+                        
+                        curr_row += 1
+                        ws.cell(row=curr_row, column=1, value=f"KMO={format_stat(results.get('kmo',0))}, Bartlett's test결과 χ²={round(results.get('bartlett_chi_square',0),3)} (df={results.get('bartlett_df',0)}, p={format_stat(results.get('bartlett_p_value',1))})")
                         ws.merge_cells(start_row=curr_row, start_column=1, end_row=curr_row, end_column=len(headers))
                         curr_row += 2
                         parsed = True

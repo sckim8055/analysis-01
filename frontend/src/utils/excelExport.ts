@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 
-export const exportHtmlTableToExcel = (title: string, filename: string, tableIds: string[]) => {
+export const exportHtmlTableToExcel = (title: string, filename: string, tableIds: string[], appendTexts: string[] = []) => {
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet([[title]]);
     
@@ -32,6 +32,13 @@ export const exportHtmlTableToExcel = (title: string, filename: string, tableIds
             }
         }
     });
+    
+    // Add appendTexts if provided
+    if (appendTexts && appendTexts.length > 0) {
+        const textAoa = appendTexts.map(text => [text]);
+        XLSX.utils.sheet_add_aoa(ws, textAoa, {origin: `A${currentRow}`});
+        currentRow += appendTexts.length + 1;
+    }
     
     // Auto-size columns slightly
     if (ws['!ref']) {

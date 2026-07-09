@@ -115,10 +115,20 @@ async def perform_efa(request: EFARequest):
         # rotation이 'none' 문자열로 오면 None 타입으로 변환
         rot = None if request.rotation and request.rotation.lower() == 'none' else request.rotation
         
-        fa = FactorAnalyzer(n_factors=n_factors, rotation=rot, method=request.extraction)
+        # SPSS와 일치하도록 최대 반복 횟수 25, 오차 허용범위 1e-4 설정
+        rotation_kwargs = {'max_iter': 25, 'tol': 1e-4} if rot else None
+        
+        fa = FactorAnalyzer(n_factors=n_factors, rotation=rot, method=request.extraction, rotation_kwargs=rotation_kwargs)
         fa.fit(df_selected)
 
         loadings_matrix = fa.loadings_
+        
+        # SPSS 일치: 회전 후의 분산설명력(적재제곱합)이 큰 순서대로 요인(열)을 재정렬
+        if rot:
+            ss_loadings = np.sum(loadings_matrix ** 2, axis=0)
+            sort_idx = np.argsort(ss_loadings)[::-1]
+            loadings_matrix = loadings_matrix[:, sort_idx]
+            fa.loadings_ = loadings_matrix
         
         # SPSS 일치: 각 요인(열)에서 절댓값이 가장 큰 적재값의 부호가 음수라면, 해당 요인의 모든 부호를 반전시킵니다.
         # 방향성만 바뀌는 것이므로 분산설명력 등의 통계적 의미는 동일합니다.
