@@ -33,7 +33,7 @@ export const TTestAnovaView: React.FC = () => {
                 // To be safe, if factorResults[v.id] exists, it must be approved. If it doesn't, we just allow it.
                 const res = factorResults[v.id];
                 if (res && !approvedVariables.includes(v.id)) return;
-                
+
 
                 const survivedMap: Record<string, string> = {};
                 if (res && res.matrixItems) {
@@ -325,7 +325,7 @@ export const TTestAnovaView: React.FC = () => {
                     </span>
                 </div>
                 <div style={{ display: 'flex', gap: '12px' }}>
-                    
+
                     <button
                         className="btn-primary"
                         style={{ display: 'flex', alignItems: 'center', gap: '8px' }}

@@ -592,8 +592,9 @@ ightarrow$ 종속변수):**
                 </div>
                 );
             })() : (
-                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--error)' }}>
-                    * 변수 매핑 화면에서 조절변수(Mod)가 올바르게 설정되어야 합니다.
+                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                    <p style={{ marginBottom: '8px' }}>현재 설계된 연구 모형에는 <b>단순 조절효과</b> (독립변수 → 종속변수를 직접 조절하는 경로)가 없습니다.</p>
+                    <p style={{ fontSize: '14px', color: 'var(--primary)' }}>* 조절변수가 매개경로를 조절하도록 설계하신 경우, <b>[조절된 매개효과]</b> 메뉴를 확인해주세요.</p>
                 </div>
             )}
         </div>

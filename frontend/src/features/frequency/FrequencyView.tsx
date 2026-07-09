@@ -24,7 +24,14 @@ export const FrequencyView: React.FC = () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ columns: demographicColumns })
         });
-        if (!res.ok) throw new Error('API Error');
+        
+        if (!res.ok) {
+            if (res.status === 400) {
+                alert("서버 메모리가 초기화되었습니다. 데이터 업로드 메뉴로 돌아가서 데이터를 다시 업로드해주세요.");
+            }
+            throw new Error('API Error');
+        }
+        
         const data = await res.json();
         setResults(data.frequencies);
         

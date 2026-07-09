@@ -51,6 +51,9 @@ export const FactorAnalysisView: React.FC = () => {
   const [droppedItems, setDroppedItems] = useState<string[]>([]);
   const [kmoValue, setKmoValue] = useState<number | null>(null);
   const [varianceValue, setVarianceValue] = useState<number | null>(null);
+  const [communalities, setCommunalities] = useState<Record<string, number>>({});
+  const [varianceData, setVarianceData] = useState<any[]>([]);
+  const [bartlettData, setBartlettData] = useState<{chi: number, df: number, p: number} | null>(null);
 
   useEffect(() => {
     if (!activeVarId && allVariables.length > 0) {
@@ -69,6 +72,9 @@ export const FactorAnalysisView: React.FC = () => {
     setDroppedItems([]);
     setKmoValue(null);
     setVarianceValue(null);
+    setCommunalities({});
+    setVarianceData([]);
+    setBartlettData(null);
 
     try {
       const allItemIds = new Set<string>();
@@ -179,9 +185,16 @@ export const FactorAnalysisView: React.FC = () => {
       setDroppedItems(dItems);
       setKmoValue(result.kmo);
       
-      // 분산설명력 임시 계산 (eigenvalues 합 / 항목수)
-      const varPct = (result.eigenvalues.reduce((a: number, b: number) => a + b, 0) / itemsArray.length) * 100;
-      setVarianceValue(varPct);
+      // 분산설명력 임시 계산 제거 및 백엔드 결과 사용
+      setVarianceValue(result.total_variance);
+      // 추가 결과값 세팅
+      setCommunalities(result.communalities || {});
+      setVarianceData(result.variance_explained || []);
+      setBartlettData({
+        chi: result.bartlett_chi_square || 0,
+        df: result.bartlett_df || 0,
+        p: result.bartlett_p_value || 0
+      });
 
     } catch (err: any) {
       console.error(err);
@@ -202,6 +215,10 @@ export const FactorAnalysisView: React.FC = () => {
           setFactorNames(result.factorNames || []);
           setMatrixItems(result.matrixItems || []);
           setDroppedItems(result.dropped || []);
+          if (result.communalities) setCommunalities(result.communalities);
+          if (result.varianceData) setVarianceData(result.varianceData);
+          if (result.bartlettData) setBartlettData(result.bartlettData);
+          if (result.kmoValue) setKmoValue(result.kmoValue);
           setIsAnalyzing(false);
         }
       }
@@ -217,7 +234,15 @@ export const FactorAnalysisView: React.FC = () => {
 
   const handleApprove = () => {
     if (!activeVarId) return;
-    setFactorResult(activeVarId, { factorNames, matrixItems, dropped: droppedItems });
+    setFactorResult(activeVarId, { 
+      factorNames, 
+      matrixItems, 
+      dropped: droppedItems,
+      communalities,
+      varianceData,
+      bartlettData,
+      kmoValue
+    });
     approveVariable(activeVarId);
     
     const currentIndex = allVariables.findIndex(x => x.v.id === activeVarId);
@@ -493,6 +518,10 @@ export const FactorAnalysisView: React.FC = () => {
                           hideSmallCoefficients={factorSettings.hideSmallCoefficients}
                           smallCoefficientThreshold={factorSettings.smallCoefficientThreshold}
                           loadingThreshold={factorSettings.loading}
+                          communalities={communalities}
+                          varianceData={varianceData}
+                          bartlettData={bartlettData}
+                          kmoValue={kmoValue}
                         />
                         
                         {droppedItems.length > 0 && (

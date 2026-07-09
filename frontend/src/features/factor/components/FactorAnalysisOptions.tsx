@@ -7,15 +7,10 @@ export const FactorAnalysisOptions: React.FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <div>
-        <label className="text-small">요인추출</label>
-        <select 
-          value={factorSettings.extraction}
-          onChange={(e) => setFactorSettings({ extraction: e.target.value as any })}
-          style={{ width: '100%', padding: '8px', background: 'var(--bg-base)', color: 'white', border: '1px solid var(--border-color)', borderRadius: '4px', marginTop: '4px' }}
-        >
-          <option value="pca">주성분분석(PCA)</option>
-          <option value="efa">탐색적요인분석(EFA)</option>
-        </select>
+        <label className="text-small" style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span>요인추출</span>
+          <span style={{ color: 'var(--text-secondary)' }}>주성분분석(PCA)</span>
+        </label>
       </div>
       <div>
         <label className="text-small">요인회전</label>

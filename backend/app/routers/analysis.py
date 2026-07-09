@@ -434,13 +434,26 @@ async def perform_correlation(request: CorrelationRequest):
     # 각 요인별 평균 점수 계산
     factor_means = {}
     names = []
+    
+    # 중복 이름 방지용 카운터
+    name_counts = {}
+    
     for factor in request.factors:
         items = [i for i in factor.items if i in df.columns]
         if not items:
             continue
         df_f = df[items].apply(pd.to_numeric, errors='coerce')
-        factor_means[factor.name] = df_f.mean(axis=1)
-        names.append(factor.name)
+        
+        base_name = factor.name
+        if base_name not in name_counts:
+            name_counts[base_name] = 1
+            unique_name = base_name
+        else:
+            name_counts[base_name] += 1
+            unique_name = f"{base_name} ({name_counts[base_name]})"
+            
+        factor_means[unique_name] = df_f.mean(axis=1)
+        names.append(unique_name)
         
     df_means = pd.DataFrame(factor_means)
     
@@ -564,12 +577,30 @@ async def _perform_difference(request: DifferenceRequest):
     
     # Calculate factor means
     factor_means = {}
+    name_counts = {}
+    unique_factor_names = {}
+    
     for factor in request.factors:
         items = [i for i in factor.items if i in df.columns]
         if not items:
             continue
         df_f = df[items].apply(pd.to_numeric, errors='coerce')
-        factor_means[factor.name] = df_f.mean(axis=1)
+        
+        base_name = factor.name
+        if base_name not in name_counts:
+            name_counts[base_name] = 1
+            unique_name = base_name
+        else:
+            name_counts[base_name] += 1
+            unique_name = f"{base_name} ({name_counts[base_name]})"
+            
+        unique_factor_names[factor.name] = unique_name
+        # Note: If there are multiple factors with the SAME original name, 
+        # unique_factor_names dictionary will overwrite and only keep the last mapping.
+        # So we should actually mutate factor.name so subsequent loops use the unique name.
+        factor.name = unique_name
+        
+        factor_means[unique_name] = df_f.mean(axis=1)
         
     df_means = pd.DataFrame(factor_means)
     
@@ -784,20 +815,41 @@ async def perform_regression(request: RegressionRequest):
     if df is None:
         raise HTTPException(status_code=400, detail="데이터가 메모리에 존재하지 않습니다. 먼저 업로드해주세요.")
     
-    # Calculate means for IVs and DVs
     iv_data = {}
+    name_counts = {}
+    
     for factor in request.ivs:
         items = [i for i in factor.items if i in df.columns]
         if items:
             df_f = df[items].apply(pd.to_numeric, errors='coerce')
-            iv_data[factor.name] = df_f.mean(axis=1)
+            
+            base_name = factor.name
+            if base_name not in name_counts:
+                name_counts[base_name] = 1
+                unique_name = base_name
+            else:
+                name_counts[base_name] += 1
+                unique_name = f"{base_name} ({name_counts[base_name]})"
+            
+            factor.name = unique_name
+            iv_data[unique_name] = df_f.mean(axis=1)
             
     dv_data = {}
     for factor in request.dvs:
         items = [i for i in factor.items if i in df.columns]
         if items:
             df_f = df[items].apply(pd.to_numeric, errors='coerce')
-            dv_data[factor.name] = df_f.mean(axis=1)
+            
+            base_name = factor.name
+            if base_name not in name_counts:
+                name_counts[base_name] = 1
+                unique_name = base_name
+            else:
+                name_counts[base_name] += 1
+                unique_name = f"{base_name} ({name_counts[base_name]})"
+                
+            factor.name = unique_name
+            dv_data[unique_name] = df_f.mean(axis=1)
             
     df_iv = pd.DataFrame(iv_data)
     df_dv = pd.DataFrame(dv_data)
@@ -926,42 +978,48 @@ async def perform_mediation(request: MediationRequest):
         raise HTTPException(status_code=400, detail="데이터가 메모리에 존재하지 않습니다. 먼저 업로드해주세요.")
     
     try:
-        ivs_data = [{"name": iv.name, "items": iv.items} for iv in request.ivs]
+        name_counts = {}
+        def get_unique(v):
+            base_name = v.name
+            if base_name not in name_counts:
+                name_counts[base_name] = 1
+                return {"name": base_name, "items": v.items}
+            else:
+                name_counts[base_name] += 1
+                return {"name": f"{base_name} ({name_counts[base_name]})", "items": v.items}
+                
+        ivs_data = [get_unique(iv) for iv in request.ivs]
+        dvs_data = [get_unique(dv) for dv in request.dvs]
+        meds_data = [get_unique(med) for med in request.meds]
+        mods_data = [get_unique(mod) for mod in request.mods]
         
         all_results = []
         
         if request.analysis_type == "moderation":
-            for dv in request.dvs:
-                dv_data = {"name": dv.name, "items": dv.items}
-                for mod in request.mods:
-                    mod_data = {"name": mod.name, "items": mod.items}
+            for dv_data in dvs_data:
+                for mod_data in mods_data:
                     res = run_moderation_analysis(df, ivs_data, mod_data, dv_data)
-                    res["dv_name"] = dv.name
-                    res["mod_name"] = mod.name
+                    res["dv_name"] = dv_data["name"]
+                    res["mod_name"] = mod_data["name"]
                     all_results.append(res)
             return {"results": all_results}
             
         elif request.analysis_type == "moderated_mediation":
-            for dv in request.dvs:
-                dv_data = {"name": dv.name, "items": dv.items}
-                for med in request.meds:
-                    med_data = {"name": med.name, "items": med.items}
-                    for mod in request.mods:
-                        mod_data = {"name": mod.name, "items": mod.items}
+            for dv_data in dvs_data:
+                for med_data in meds_data:
+                    for mod_data in mods_data:
                         res = run_moderated_mediation(df, ivs_data[0], med_data, mod_data, dv_data, n_boot=request.n_boot, seed=request.seed)
-                        res["dv_name"] = dv.name
-                        res["med_name"] = med.name
-                        res["mod_name"] = mod.name
+                        res["dv_name"] = dv_data["name"]
+                        res["med_name"] = med_data["name"]
+                        res["mod_name"] = mod_data["name"]
                         all_results.append(res)
             return {"results": all_results}
             
         else: # Classic mediation
-            for dv in request.dvs:
-                dv_data = {"name": dv.name, "items": dv.items}
+            for dv_data in dvs_data:
                 med_models = []
                 
-                for med in request.meds:
-                    med_data = {"name": med.name, "items": med.items}
+                for med_data in meds_data:
                     res = run_mediation_analysis(
                         df=df,
                         ivs_data=ivs_data,
@@ -970,11 +1028,11 @@ async def perform_mediation(request: MediationRequest):
                         n_boot=request.n_boot,
                         seed=request.seed
                     )
-                    res['med_name'] = med.name
+                    res['med_name'] = med_data["name"]
                     med_models.append(res)
                     
                 all_results.append({
-                    "dv_name": dv.name,
+                    "dv_name": dv_data["name"],
                     "models": med_models
                 })
                 
