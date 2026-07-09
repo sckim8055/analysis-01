@@ -1,8 +1,9 @@
 import type { Edge, Node } from 'reactflow';
 
 export interface Hypothesis {
-  type: '주효과' | '매개효과' | '조절효과' | '조절된 매개효과';
-  text: string;
+  type: '주효과' | '매개효과' | '조절효과' | '조절된 매개효과' | '오류';
+  main_text: string;
+  sub_hypotheses: string[];
 }
 
 export const generateHypotheses = (nodes: Node[], edges: Edge[]): Hypothesis[] => {

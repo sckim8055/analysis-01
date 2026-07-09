@@ -11,7 +11,8 @@ class GraphData(BaseModel):
 
 class HypothesisResponse(BaseModel):
     type: str
-    text: str
+    main_text: str
+    sub_hypotheses: List[str]
 
 @router.post("/generate", response_model=List[HypothesisResponse])
 async def generate_hypotheses(data: GraphData):

@@ -53,7 +53,7 @@ export const ReliabilityView: React.FC = () => {
               mappingInfo[sf.id] = {
                 group: `[${roleMap[role] || role}] ${v.name}`,
                 concept: sf.name,
-                initialCount: sf.itemIds?.length || 0,
+                initialCount: sf.originalItemIds?.length || sf.itemIds?.length || 0,
                 finalCount: finalCols.length
               };
             }

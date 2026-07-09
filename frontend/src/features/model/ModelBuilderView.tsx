@@ -32,7 +32,7 @@ const edgeTypes = {
 
 export const ModelBuilderView: React.FC = () => {
   const { setCurrentStep } = useUiStore();
-  const { mappedVars, savedModelNodes, savedModelEdges, saveModel, factorResults } = useAnalysisStore();
+  const { mappedVars, savedModelNodes, savedModelEdges, saveModel, factorResults, approvedVariables } = useAnalysisStore();
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>(savedModelNodes.length > 0 ? savedModelNodes : []);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(savedModelEdges.length > 0 ? savedModelEdges : []);
@@ -60,6 +60,11 @@ export const ModelBuilderView: React.FC = () => {
       let currentY = startY;
 
       vars.forEach(v => {
+        if (!approvedVariables.includes(v.id)) return;
+
+        const res = factorResults?.[v.id];
+        const finalSubFactors = res?.extractedSubFactors || v.subFactors;
+
         newNodes.push({
           id: v.id,
           type: 'customVariable',
@@ -67,7 +72,8 @@ export const ModelBuilderView: React.FC = () => {
           data: {
             label: v.name,
             varType: varType,
-            isGroup: false
+            isGroup: false,
+            subFactors: finalSubFactors
           },
           deletable: false,
         });
@@ -413,9 +419,13 @@ export const ModelBuilderView: React.FC = () => {
     let newEdges: any[] = [];
 
     // Helper to create node
-    const createNode = (v: any, x: number, y: number, type: string) => ({
-      id: v.id, type: 'customVariable', position: { x, y }, data: { label: v.name, varType: type, isGroup: false }
-    });
+    const createNode = (v: any, x: number, y: number, type: string) => {
+      const res = factorResults?.[v.id];
+      const finalSubFactors = res?.extractedSubFactors || v.subFactors;
+      return {
+        id: v.id, type: 'customVariable', position: { x, y }, data: { label: v.name, varType: type, isGroup: false, subFactors: finalSubFactors }
+      };
+    };
     // Helper to create edge
     const createEdge = (source: string, target: string, type: string = 'custom') => ({
       id: `e-${source}-${target}`, source, target, type
@@ -619,11 +629,14 @@ export const ModelBuilderView: React.FC = () => {
     
     // 약간 랜덤한 위치에 배치 (겹침 방지)
     const randomOffset = Math.floor(Math.random() * 50);
+    const res = factorResults?.[v.id];
+    const finalSubFactors = res?.extractedSubFactors || v.subFactors;
+
     const newNode: Node = {
       id: v.id,
       type: 'customVariable',
       position: { x: 300 + randomOffset, y: 200 + randomOffset },
-      data: { label: v.name, varType: type, isGroup: false },
+      data: { label: v.name, varType: type, isGroup: false, subFactors: finalSubFactors },
       deletable: true // 직접 추가한 노드는 삭제 가능하도록
     };
     setNodes(nds => nds.concat(newNode));
@@ -658,7 +671,15 @@ export const ModelBuilderView: React.FC = () => {
   };
 
   const handleCopyToClipboard = () => {
-    const text = generatedHypotheses.map((h, i) => `가설 ${i + 1}. ${h.text}`).join('\n');
+    const text = generatedHypotheses.map((h, i) => {
+      let result = `[${h.type}] 가설 ${i + 1}. ${h.main_text}`;
+      if (h.sub_hypotheses && h.sub_hypotheses.length > 0) {
+        h.sub_hypotheses.forEach((sh, j) => {
+          result += `\n    가설 ${i + 1}-${j + 1}. ${sh}`;
+        });
+      }
+      return result;
+    }).join('\n\n');
     navigator.clipboard.writeText(text).then(() => {
       alert('클립보드에 복사되었습니다.');
     });
@@ -725,7 +746,8 @@ export const ModelBuilderView: React.FC = () => {
           <div style={{ flex: 1, overflowY: 'auto', overflowX: 'auto', padding: '12px' }}>
             {['iv', 'dv', 'med', 'mod'].map((type) => {
               const vars = mappedVars[type as keyof typeof mappedVars] || [];
-              if (vars.length === 0) return null;
+              const approvedVarsOfType = vars.filter(v => approvedVariables.includes(v.id));
+              if (approvedVarsOfType.length === 0) return null;
               
               let typeName = '';
               let typeColor = '';
@@ -739,8 +761,10 @@ export const ModelBuilderView: React.FC = () => {
                   <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: typeColor, marginBottom: '8px' }}>
                     {typeName}
                   </div>
-                  {vars.map(v => {
+                  {approvedVarsOfType.map(v => {
                     const res = factorResults?.[v.id];
+                    const finalTreeSubFactors = res?.extractedSubFactors || v.subFactors;
+                    
                     const survivedMap: Record<string, boolean> = {};
                     if (res?.matrixItems) {
                       res.matrixItems.forEach((m: any) => survivedMap[m.id || m.originalName] = true);
@@ -748,44 +772,48 @@ export const ModelBuilderView: React.FC = () => {
                     const getCountStr = (itemIds: string[] | undefined) => {
                       if (!itemIds) return '(0문항)';
                       if (!res?.matrixItems) return `(${itemIds.length}문항)`;
-                      const survivedCount = itemIds.filter(id => survivedMap[id]).length;
+                      const survivedCount = itemIds.filter((id: string) => survivedMap[id]).length;
                       return `(${itemIds.length}개 중 ${survivedCount}개 선택)`;
                     };
 
                     return (
-                    <div key={v.id} style={{ marginBottom: '8px', paddingLeft: '8px' }}>
-                      <div 
-                        style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', cursor: 'pointer', padding: '4px 8px', borderRadius: '6px', transition: 'background-color 0.2s', position: 'relative', whiteSpace: 'nowrap' }}
-                        onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-base)'}
-                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                        onClick={() => addNodeToCanvas(v, type)}
-                        title="클릭하여 캔버스에 추가"
-                      >
-                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: typeColor }} />
-                        {v.name}
-                        {(!v.subFactors || v.subFactors.length === 0) && (
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                            {getCountStr(v.itemIds)}
-                          </span>
-                        )}
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginLeft: 'auto', background: 'var(--bg-surface)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>+ 캔버스에 추가</span>
-                      </div>
-                      {/* 하위 요인 트리 */}
-                      {v.subFactors && v.subFactors.length > 0 && (
-                        <div style={{ marginLeft: '12px', borderLeft: '1px solid var(--border-light)', paddingLeft: '8px', marginTop: '4px' }}>
-                          {v.subFactors.map(sf => (
-                            <div key={sf.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '2px 0', fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                              <Layers size={10} />
-                              <span>{sf.name}</span>
-                              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                {getCountStr(sf.itemIds)}
-                              </span>
-                            </div>
-                          ))}
+                      <div key={v.id} style={{ marginBottom: '12px' }}>
+                        <div 
+                          style={{ 
+                            padding: '10px 12px', 
+                            backgroundColor: 'var(--bg-panel)', 
+                            border: `1px solid ${getNodeColor({ data: { varType: type } } as any)}`,
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            marginBottom: '4px',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                          }}
+                          onClick={() => addNodeToCanvas(v, type)}
+                        >
+                          <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: getNodeColor({ data: { varType: type } } as any) }} />
+                          <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>{v.name}</span>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginLeft: 'auto', background: 'var(--bg-surface)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>+ 캔버스에 추가</span>
                         </div>
-                      )}
-                    </div>
-                  )})}
+                        {/* 하위 요인 트리 */}
+                        {finalTreeSubFactors && finalTreeSubFactors.length > 0 && (
+                          <div style={{ marginLeft: '12px', borderLeft: '1px solid var(--border-light)', paddingLeft: '8px', marginTop: '4px' }}>
+                            {finalTreeSubFactors.map((sf: any) => (
+                              <div key={sf.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '2px 0', fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                                <Layers size={10} />
+                                <span>{sf.name}</span>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                  {getCountStr(sf.originalItemIds || sf.itemIds)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               );
             })}
@@ -844,13 +872,29 @@ export const ModelBuilderView: React.FC = () => {
               ) : (
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {generatedHypotheses.map((h, i) => (
-                    <li key={i} style={{ padding: '12px', background: 'var(--bg-base)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                      <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', background: 'var(--accent-primary)', color: 'white', fontSize: '11px', fontWeight: 'bold', marginBottom: '8px' }}>
-                        {h.type}
-                      </span>
-                      <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.5, color: 'var(--text-primary)' }}>
-                        <strong>가설 {i + 1}.</strong> {h.text}
+                    <li key={i} style={{ padding: '16px', background: 'var(--bg-base)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                      <div style={{ marginBottom: '8px' }}>
+                        <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', background: 'var(--accent-primary)', color: 'white', fontSize: '11px', fontWeight: 'bold', marginRight: '8px' }}>
+                          {h.type}
+                        </span>
+                        <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>
+                          가설 {i + 1}.
+                        </span>
+                      </div>
+                      <p style={{ margin: '0 0 12px 0', fontSize: '14px', lineHeight: 1.5, color: 'var(--text-primary)', fontWeight: 500 }}>
+                        {h.main_text}
                       </p>
+                      
+                      {h.sub_hypotheses && h.sub_hypotheses.length > 0 && (
+                        <ul style={{ listStyle: 'none', padding: '0 0 0 16px', margin: 0, borderLeft: '2px solid var(--border-light)' }}>
+                          {h.sub_hypotheses.map((sh, j) => (
+                            <li key={j} style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginBottom: '6px', lineHeight: 1.5 }}>
+                              <span style={{ color: 'var(--text-muted)', marginRight: '6px' }}>가설 {i + 1}-{j + 1}.</span>
+                              {sh}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </li>
                   ))}
                 </ul>

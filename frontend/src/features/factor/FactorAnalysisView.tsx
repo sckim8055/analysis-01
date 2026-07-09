@@ -17,13 +17,14 @@ import { exportHtmlTableToExcel } from '../../utils/excelExport';
 export const FactorAnalysisView: React.FC = () => {
   const { 
     mappedVars, 
-    factorSettings, 
+    factorSettings,
     approveVariable, 
     setFactorResult, 
     triggerFactorAnalysis,
     excludedItems,
     toggleItemExclusion,
-    factorResults
+    factorResults,
+    saveModel
   } = useAnalysisStore();
   
   const { setCurrentStep } = useUiStore();
@@ -236,6 +237,29 @@ export const FactorAnalysisView: React.FC = () => {
 
   const handleApprove = () => {
     if (!activeVarId) return;
+
+    // EFA 결과를 바탕으로 해당 변수의 subFactors를 추출 (mappedVars 원본은 보호)
+    let newSubFactors = undefined;
+    if (activeVarContext) {
+      newSubFactors = factorNames.map((fName, fIdx) => {
+        const itemIdsForFactor = matrixItems
+          .filter(m => {
+            const maxVal = Math.max(...m.loadings.map(Math.abs));
+            const maxIdx = m.loadings.findIndex(l => Math.abs(l) === maxVal);
+            return maxIdx === fIdx;
+          })
+          .map(m => m.id);
+          
+        const existingSf = activeVarContext.v.subFactors?.find(sf => sf.name === fName);
+        return {
+          id: existingSf ? existingSf.id : `sf_${Math.random().toString(36).substr(2, 9)}`,
+          name: fName,
+          itemIds: itemIdsForFactor,
+          originalItemIds: existingSf ? existingSf.itemIds : itemIdsForFactor
+        };
+      }).filter(sf => sf.itemIds.length > 0);
+    }
+
     setFactorResult(activeVarId, { 
       factorNames, 
       matrixItems, 
@@ -243,10 +267,14 @@ export const FactorAnalysisView: React.FC = () => {
       communalities,
       varianceData,
       bartlettData,
-      kmoValue
+      kmoValue,
+      extractedSubFactors: newSubFactors
     });
     approveVariable(activeVarId);
     
+    // 요인분석이 확정/승인될 때마다 모형설계를 강제로 초기화하여 최신 결과를 반영하도록 함 (사용자 요청)
+    saveModel([], []);
+
     const currentIndex = allVariables.findIndex(x => x.v.id === activeVarId);
     const nextUnapproved = allVariables.slice(currentIndex + 1).find(x => !approvedVariables.includes(x.v.id));
     if (nextUnapproved) setActiveVarId(nextUnapproved.v.id);
