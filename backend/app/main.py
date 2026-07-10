@@ -32,7 +32,7 @@ app.include_router(analysis.router, prefix="/api/analysis")
 app.include_router(report.router, prefix="/api/analysis")
 app.include_router(hypotheses.router)
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def read_root():
     return {"message": "Welcome to Research Analyzer API"}
 # force reload
