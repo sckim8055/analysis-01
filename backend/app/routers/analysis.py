@@ -104,7 +104,7 @@ async def perform_efa(request: EFARequest):
             
             eigenvalues = ev.tolist()
         else:
-            n_factors = request.n_factors
+            n_factors = min(request.n_factors, len(request.columns))
             # 고유값 계산을 위한 임시 피팅
             fa_temp = FactorAnalyzer(n_factors=len(request.columns), rotation=None, method=request.extraction)
             fa_temp.fit(df_selected)
