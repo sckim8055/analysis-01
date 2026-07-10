@@ -528,7 +528,7 @@ export const FactorAnalysisView: React.FC = () => {
                     {!isAnalyzing && kmoValue !== null && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                         <span className="text-small" style={{ color: 'var(--accent-primary)' }}>
-                          KMO: {formatStatNumber(kmoValue)} | 누적 분산설명력: {varianceValue?.toFixed(1)}%
+                          KMO: {kmoValue != null ? formatStatNumber(kmoValue) : ''} | 누적 분산설명력: {varianceValue?.toFixed(1)}%
                         </span>
                         <button 
                           className="btn-secondary" 
@@ -546,7 +546,7 @@ export const FactorAnalysisView: React.FC = () => {
                               `• 분산설명력: ${factorSettings.variance}% 이상`,
                               `• KMO: ${factorSettings.kmo} 이상`,
                               '',
-                              `KMO=${formatStatNumber(kmoValue)}, Bartlett's test결과 χ²=${bartlettData?.chi.toFixed(3)} (df=${bartlettData?.df}, p=${formatStatNumber(bartlettData?.p)})`
+                              `KMO=${kmoValue != null ? formatStatNumber(kmoValue) : ''}, Bartlett's test결과 χ²=${bartlettData?.chi.toFixed(3)} (df=${bartlettData?.df}, p=${bartlettData?.p != null ? formatStatNumber(bartlettData.p) : ''})`
                             ];
                             
                             exportHtmlTableToExcel(filename.replace('.xlsx', ''), filename, ['factor-matrix-table'], appendTexts);

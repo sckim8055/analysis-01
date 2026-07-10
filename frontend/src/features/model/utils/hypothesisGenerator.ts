@@ -61,7 +61,8 @@ export const generateHypotheses = (nodes: Node[], edges: Edge[]): Hypothesis[] =
       tLabels.forEach(tLabel => {
         hypotheses.push({
           type: '주효과',
-          text: `${sLabel}은(는) ${tLabel}에 정(+)의 영향을 미칠 것이다.`
+          main_text: `${sLabel}은(는) ${tLabel}에 정(+)의 영향을 미칠 것이다.`,
+          sub_hypotheses: []
         });
       });
     });
@@ -88,7 +89,8 @@ export const generateHypotheses = (nodes: Node[], edges: Edge[]): Hypothesis[] =
             dvLabels.forEach(dvLabel => {
               hypotheses.push({
                 type: '매개효과',
-                text: `${medLabel}은(는) ${ivLabel}과(와) ${dvLabel} 사이의 관계를 매개할 것이다.`
+                main_text: `${medLabel}은(는) ${ivLabel}과(와) ${dvLabel} 사이의 관계를 매개할 것이다.`,
+                sub_hypotheses: []
               });
             });
           });
@@ -127,12 +129,14 @@ export const generateHypotheses = (nodes: Node[], edges: Edge[]): Hypothesis[] =
             if (isPartOfMediation) {
               hypotheses.push({
                 type: '조절된 매개효과',
-                text: `${modLabel}은(는) ${sourceLabel}이(가) ${targetLabel}에 미치는 영향을 조절함으로써, 전체적인 매개효과의 크기를 조절할 것이다.`
+                main_text: `${modLabel}은(는) ${sourceLabel}이(가) ${targetLabel}에 미치는 영향을 조절함으로써, 전체적인 매개효과의 크기를 조절할 것이다.`,
+                sub_hypotheses: []
               });
             } else {
               hypotheses.push({
                 type: '조절효과',
-                text: `${modLabel}은(는) ${sourceLabel}이(가) ${targetLabel}에 미치는 영향을 조절할 것이다.`
+                main_text: `${modLabel}은(는) ${sourceLabel}이(가) ${targetLabel}에 미치는 영향을 조절할 것이다.`,
+                sub_hypotheses: []
               });
             }
           });

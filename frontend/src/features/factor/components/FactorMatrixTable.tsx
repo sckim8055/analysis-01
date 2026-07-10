@@ -158,11 +158,11 @@ export const FactorMatrixTable: React.FC<FactorMatrixTableProps> = ({
         </table>
         
         {/* Footer (KMO & Bartlett) */}
-        {(kmoValue !== null || bartlettData) && (
+        {(kmoValue != null || bartlettData != null) && (
           <div style={{ marginTop: '8px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            {kmoValue !== null && `KMO=${formatStatNumber(kmoValue)}`}
-            {kmoValue !== null && bartlettData && ", "}
-            {bartlettData && `Bartlett's test결과 χ²=${bartlettData.chi.toFixed(3)} (df=${bartlettData.df}, p=${formatStatNumber(bartlettData.p)})`}
+            {kmoValue != null && `KMO=${formatStatNumber(kmoValue)}`}
+            {kmoValue != null && bartlettData != null && ", "}
+            {bartlettData != null && `Bartlett's test결과 χ²=${bartlettData.chi.toFixed(3)} (df=${bartlettData.df}, p=${formatStatNumber(bartlettData.p)})`}
           </div>
         )}
       </div>
