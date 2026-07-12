@@ -3,6 +3,8 @@ import { useUiStore } from '../../store/uiStore';
 import { useProjectStore } from '../../store/projectStore';
 import { useAnalysisStore } from '../../store/analysisStore';
 import { CheckSquare, Users, GitMerge, Trash2, History } from 'lucide-react';
+import { apiFetch } from '../../utils/apiClient';
+
 
 export const DemographicsView: React.FC = () => {
   const { setCurrentStep } = useUiStore();
@@ -25,7 +27,7 @@ export const DemographicsView: React.FC = () => {
     }
     setLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/frequency`, {
+      const res = await apiFetch(`/api/analysis/frequency`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ columns: cols })
@@ -75,7 +77,7 @@ export const DemographicsView: React.FC = () => {
     }
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/data/recode`, {
+      const res = await apiFetch(`/api/data/recode`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -121,7 +123,7 @@ export const DemographicsView: React.FC = () => {
     if (!confirm(`정말 선택한 범주의 응답자를 데이터에서 완전히 제외하시겠습니까?\n이 작업은 전체 데이터 N수에 영향을 미칩니다.`)) return;
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/data/drop_values`, {
+      const res = await apiFetch(`/api/data/drop_values`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

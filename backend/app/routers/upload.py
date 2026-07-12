@@ -2,7 +2,8 @@ import io
 import os
 import pandas as pd
 import numpy as np
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from ..dependencies import get_session_id, get_project_id
+from fastapi import Depends, APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import List, Dict, Any
@@ -19,7 +20,7 @@ class UploadResponse(BaseModel):
     preview_tail: List[Dict[str, Any]] = []
 
 @router.post("/upload", response_model=UploadResponse)
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(file: UploadFile = File(...), session_id: str = Depends(get_session_id), project_id: str = Depends(get_project_id)):
     try:
         contents = await file.read()
         
@@ -34,10 +35,10 @@ async def upload_file(file: UploadFile = File(...)):
         else:
             raise HTTPException(status_code=400, detail="지원하지 않는 파일 형식입니다.")
             
-        project_id = "test-project-1" # 프로토타입용 고정 ID
+         # 프로토타입용 고정 ID
         
         # 파일명을 안전하게 저장하고 DataFrame을 메모리에 캐시
-        set_project_data(project_id, df, file.filename)
+        set_project_data(project_id, session_id, df, file.filename)
         
         df_clean = df.fillna("")
         return {
@@ -56,7 +57,7 @@ class ImportUrlRequest(BaseModel):
     url: str
 
 @router.post("/import_url", response_model=UploadResponse)
-async def import_url(req: ImportUrlRequest):
+async def import_url(req: ImportUrlRequest, session_id: str = Depends(get_session_id), project_id: str = Depends(get_project_id)):
     try:
         url = req.url.strip()
         if not url:
@@ -82,11 +83,11 @@ async def import_url(req: ImportUrlRequest):
             except Exception:
                 raise HTTPException(status_code=400, detail="링크에서 데이터를 읽을 수 없습니다. (접근 권한이 없거나 지원되지 않는 형식입니다.)")
                 
-        project_id = "test-project-1"
+        
         filename = "imported_from_url.csv"
         
         # 파일명을 안전하게 저장하고 DataFrame을 메모리에 캐시
-        set_project_data(project_id, df, filename)
+        set_project_data(project_id, session_id, df, filename)
         
         df_clean = df.fillna("")
         return {
@@ -104,8 +105,8 @@ async def import_url(req: ImportUrlRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/data/smart")
-async def get_smart_data():
-    df = _get_active_df()
+async def get_smart_data(session_id: str = Depends(get_session_id), project_id: str = Depends(get_project_id)):
+    df = get_project_data(project_id, session_id)
     if df is None:
         raise HTTPException(status_code=404, detail="업로드된 데이터가 없습니다.")
 
@@ -138,17 +139,14 @@ async def get_smart_data():
         "data": result
     }
 
-def _get_active_df():
-    return get_project_data("test-project-1")
-
 class RecodeRequest(BaseModel):
     column_name: str
     old_values: List[Any]
     new_value: Any
 
 @router.post("/data/recode")
-async def recode_data(req: RecodeRequest):
-    df = _get_active_df()
+async def recode_data(req: RecodeRequest, session_id: str = Depends(get_session_id), project_id: str = Depends(get_project_id)):
+    df = get_project_data(project_id, session_id)
     if df is None:
         raise HTTPException(status_code=404, detail="업로드된 데이터가 없습니다.")
         
@@ -173,8 +171,8 @@ class RecodeMapRequest(BaseModel):
     mappings: Dict[str, Any]
 
 @router.get("/data/distinct/{column_name}")
-async def get_distinct_values(column_name: str):
-    df = _get_active_df()
+async def get_distinct_values(column_name: str, session_id: str = Depends(get_session_id), project_id: str = Depends(get_project_id)):
+    df = get_project_data(project_id, session_id)
     if df is None:
         raise HTTPException(status_code=404, detail="업로드된 데이터가 없습니다.")
     if column_name not in df.columns:
@@ -189,8 +187,8 @@ async def get_distinct_values(column_name: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/data/profiles")
-async def get_data_profiles():
-    df = _get_active_df()
+async def get_data_profiles(session_id: str = Depends(get_session_id), project_id: str = Depends(get_project_id)):
+    df = get_project_data(project_id, session_id)
     if df is None:
         raise HTTPException(status_code=404, detail="업로드된 데이터가 없습니다.")
         
@@ -204,8 +202,8 @@ async def get_data_profiles():
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/data/recode_map")
-async def recode_data_map(req: RecodeMapRequest):
-    df = _get_active_df()
+async def recode_data_map(req: RecodeMapRequest, session_id: str = Depends(get_session_id), project_id: str = Depends(get_project_id)):
+    df = get_project_data(project_id, session_id)
     if df is None:
         raise HTTPException(status_code=404, detail="업로드된 데이터가 없습니다.")
         
@@ -236,8 +234,8 @@ class DropValuesRequest(BaseModel):
     values_to_drop: List[Any]
 
 @router.post("/data/drop_values")
-async def drop_data_values(req: DropValuesRequest):
-    df = _get_active_df()
+async def drop_data_values(req: DropValuesRequest, session_id: str = Depends(get_session_id), project_id: str = Depends(get_project_id)):
+    df = get_project_data(project_id, session_id)
     if df is None:
         raise HTTPException(status_code=404, detail="업로드된 데이터가 없습니다.")
         
@@ -266,8 +264,8 @@ class UpdateCellRequest(BaseModel):
     new_value: Any
 
 @router.post("/data/update_cell")
-async def update_cell(req: UpdateCellRequest):
-    df = _get_active_df()
+async def update_cell(req: UpdateCellRequest, session_id: str = Depends(get_session_id), project_id: str = Depends(get_project_id)):
+    df = get_project_data(project_id, session_id)
     if df is None:
         raise HTTPException(status_code=404, detail="데이터가 없습니다.")
         
@@ -293,8 +291,8 @@ class ReverseCodeRequest(BaseModel):
     max_val: float
 
 @router.post("/data/reverse_code")
-async def reverse_code(req: ReverseCodeRequest):
-    df = _get_active_df()
+async def reverse_code(req: ReverseCodeRequest, session_id: str = Depends(get_session_id), project_id: str = Depends(get_project_id)):
+    df = get_project_data(project_id, session_id)
     if df is None:
         raise HTTPException(status_code=404, detail="데이터가 없습니다.")
         
@@ -313,8 +311,8 @@ async def reverse_code(req: ReverseCodeRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/data/download")
-async def download_data():
-    df = _get_active_df()
+async def download_data(session_id: str = Depends(get_session_id), project_id: str = Depends(get_project_id)):
+    df = get_project_data(project_id, session_id)
     if df is None:
         raise HTTPException(status_code=404, detail="업로드된 데이터가 없습니다.")
     

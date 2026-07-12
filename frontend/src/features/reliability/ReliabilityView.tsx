@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAnalysisStore } from '../../store/analysisStore';
 import { useUiStore } from '../../store/uiStore';
 import { Download, FileText } from 'lucide-react';
+import { apiFetch } from '../../utils/apiClient';
+
 
 export const ReliabilityView: React.FC = () => {
   const { approvedVariables, factorResults, mappedVars } = useAnalysisStore();
@@ -85,7 +87,7 @@ export const ReliabilityView: React.FC = () => {
     const fetchRel = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/reliability`, {
+        const res = await apiFetch(`/api/analysis/reliability`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ factors: factorsPayload })
@@ -162,7 +164,7 @@ export const ReliabilityView: React.FC = () => {
         "Cronbach's α": "-" as any
       });
 
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/reliability/export`, {
+      const res = await apiFetch(`/api/analysis/reliability/export`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

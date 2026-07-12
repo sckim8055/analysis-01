@@ -20,6 +20,8 @@ import { JunctionNode } from './components/JunctionNode';
 import { CustomEdge } from './components/CustomEdge';
 import { PlusCircle, Clipboard, ArrowRight, X, CheckSquare, Play, Check, LayoutTemplate, Layers, RefreshCw } from 'lucide-react';
 import { type Hypothesis } from './utils/hypothesisGenerator';
+import { apiFetch } from '../../utils/apiClient';
+
 
 const nodeTypes = {
   customVariable: CustomVariableNode,
@@ -653,7 +655,7 @@ export const ModelBuilderView: React.FC = () => {
 
   const handleFinalizeModel = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/hypotheses/generate`, {
+      const response = await apiFetch(`/api/hypotheses/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nodes, edges })

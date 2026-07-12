@@ -4,6 +4,8 @@ import { useUiStore } from '../../store/uiStore';
 import { useProjectStore } from '../../store/projectStore';
 import { useAnalysisStore } from '../../store/analysisStore';
 import { UploadCloud, FileSpreadsheet, CheckCircle, Link } from 'lucide-react';
+import { apiFetch } from '../../utils/apiClient';
+
 
 export const UploadView: React.FC = () => {
   const { setCurrentStep } = useUiStore();
@@ -26,7 +28,7 @@ export const UploadView: React.FC = () => {
       formData.append('file', selectedFile);
       
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/upload`, {
+        const res = await apiFetch(`/api/upload`, {
           method: 'POST',
           body: formData
         });
@@ -60,7 +62,7 @@ export const UploadView: React.FC = () => {
     
     setIsLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/import_url`, {
+      const res = await apiFetch(`/api/import_url`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: sheetUrl })

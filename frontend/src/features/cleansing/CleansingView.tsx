@@ -5,6 +5,8 @@ import { useProjectStore } from '../../store/projectStore';
 import { useAnalysisStore } from '../../store/analysisStore';
 import { AlertTriangle, ArrowLeftRight, CheckSquare } from 'lucide-react';
 import { EditableCell } from './components/EditableCell';
+import { apiFetch } from '../../utils/apiClient';
+
 
 export const CleansingView: React.FC = () => {
   const { setCurrentStep } = useUiStore();
@@ -35,7 +37,7 @@ export const CleansingView: React.FC = () => {
 
   const fetchData = () => {
     setIsLoading(true);
-    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/data/smart`, { cache: 'no-store', headers: { 'Pragma': 'no-cache' } })
+    apiFetch(`/api/data/smart`, { cache: 'no-store', headers: { 'Pragma': 'no-cache' } })
       .then(res => {
         if (!res.ok) throw new Error('업로드된 데이터가 없거나 서버 에러입니다.');
         return res.json();
@@ -71,7 +73,7 @@ export const CleansingView: React.FC = () => {
 
   useEffect(() => {
     // 항상 마운트 시 전체 프로필을 가져와 완료 검증 등에 사용
-    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/data/profiles`)
+    apiFetch(`/api/data/profiles`)
       .then(res => res.json())
       .then(resData => {
         setProfiles(resData.data || {});
@@ -127,7 +129,7 @@ export const CleansingView: React.FC = () => {
     
     setIsRecoding(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/data/recode_map`, {
+      const res = await apiFetch(`/api/data/recode_map`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -147,7 +149,7 @@ export const CleansingView: React.FC = () => {
       setRecodeMap({});
       fetchData(); // Reload main data
       // Reload profiles
-      const resProf = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/data/profiles`);
+      const resProf = await apiFetch(`/api/data/profiles`);
       const profData = await resProf.json();
       setProfiles(profData.data || {});
       setSelectedColumn(''); // Close modal after apply
@@ -181,7 +183,7 @@ export const CleansingView: React.FC = () => {
 
     // Call API
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/data/update_cell`, {
+      const res = await apiFetch(`/api/data/update_cell`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -224,7 +226,7 @@ export const CleansingView: React.FC = () => {
     }
     setRevLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/data/reverse_code`, {
+      const res = await apiFetch(`/api/data/reverse_code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

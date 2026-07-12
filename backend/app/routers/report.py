@@ -1,5 +1,6 @@
 from ..store import get_project_data
-from fastapi import APIRouter, HTTPException
+from ..dependencies import get_session_id, get_project_id
+from fastapi import Depends, APIRouter, HTTPException
 from ..store import get_project_data
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -74,9 +75,9 @@ def add_analysis_results_to_word(doc, cached_results: Dict[str, Any]):
         # so we will rely on interpretation for Word, and put raw results in Excel.
 
 @router.post("/full-report")
-async def generate_full_report(request: ReportConfig):
-    df = get_project_data("test-project-1")
-    original_df = get_project_data("test-project-1", original=True)
+async def generate_full_report(request: ReportConfig, session_id: str = Depends(get_session_id), project_id: str = Depends(get_project_id)):
+    df = get_project_data(project_id, session_id)
+    original_df = get_project_data(project_id, session_id, original=True)
     if df is None:
         raise HTTPException(status_code=400, detail="데이터가 메모리에 존재하지 않습니다. 먼저 업로드해주세요.")
     

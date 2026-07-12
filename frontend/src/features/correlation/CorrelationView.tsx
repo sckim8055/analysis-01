@@ -3,6 +3,8 @@ import { useAnalysisStore } from '../../store/analysisStore';
 import { useProjectStore } from '../../store/projectStore';
 import { useUiStore } from '../../store/uiStore';
 import { Download, FileText } from 'lucide-react';
+import { apiFetch } from '../../utils/apiClient';
+
 
 export const CorrelationView: React.FC = () => {
   const { approvedVariables, factorResults, mappedVars } = useAnalysisStore();
@@ -77,7 +79,7 @@ export const CorrelationView: React.FC = () => {
     const fetchCorr = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/correlation`, {
+        const res = await apiFetch(`/api/analysis/correlation`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ factors: payload.map(p => ({ name: p.name, items: p.items })) })
@@ -126,7 +128,7 @@ export const CorrelationView: React.FC = () => {
         exportRows.push(rowData);
       }
 
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/correlation/export`, {
+      const res = await apiFetch(`/api/analysis/correlation/export`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

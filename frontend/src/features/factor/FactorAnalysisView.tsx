@@ -13,6 +13,8 @@ import { FactorMatrixTable } from './components/FactorMatrixTable';
 import { FactorAnalysisOptions } from './components/FactorAnalysisOptions';
 import { formatStatNumber } from '../../utils/formatters';
 import { exportHtmlTableToExcel } from '../../utils/excelExport';
+import { apiFetch } from '../../utils/apiClient';
+
 
 export const FactorAnalysisView: React.FC = () => {
   const { 
@@ -105,7 +107,7 @@ export const FactorAnalysisView: React.FC = () => {
         eigenvalue_threshold: factorSettings.eigenvalueThreshold || 1.0
       };
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/efa`, {
+      const response = await apiFetch(`/api/analysis/efa`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

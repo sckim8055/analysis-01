@@ -5,6 +5,8 @@ import { useUiStore } from '../../store/uiStore';
 import { Download, FileText, Settings2, RefreshCw } from 'lucide-react';
 import { ModerationTable } from './ModerationTable';
 import { ModeratedMediationTable } from './ModeratedMediationTable';
+import { apiFetch } from '../../utils/apiClient';
+
 
 export const ModeratedMediationView: React.FC = () => {
     const { factorResults, mappedVars, savedModelEdges, savedModelNodes } = useAnalysisStore();
@@ -231,7 +233,7 @@ export const ModeratedMediationView: React.FC = () => {
 
         setLoading(true);
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/mediation`, {
+            const res = await apiFetch(`/api/analysis/mediation`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -310,7 +312,7 @@ export const ModeratedMediationView: React.FC = () => {
                 '채택여부': mainStatus
             });
 
-            const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/mediation/export`, {
+            const res = await apiFetch(`/api/analysis/mediation/export`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

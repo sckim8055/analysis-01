@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Download } from 'lucide-react';
 import { useAnalysisStore } from '../../store/analysisStore';
 import { useProjectStore } from '../../store/projectStore';
+import { apiFetch } from '../../utils/apiClient';
+
 
 export const ReportView: React.FC = () => {
   const [isExporting, setIsExporting] = useState(false);
@@ -14,7 +16,7 @@ export const ReportView: React.FC = () => {
     setIsExporting(true);
     try {
       // API call to backend to generate report
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analysis/full-report`, {
+      const response = await apiFetch(`/api/analysis/full-report`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

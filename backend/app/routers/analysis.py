@@ -1,5 +1,6 @@
 from ..store import get_project_data
-from fastapi import APIRouter, HTTPException
+from ..dependencies import get_session_id, get_project_id
+from fastapi import Depends, APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 import math
@@ -48,14 +49,14 @@ class EFAResponse(BaseModel):
     suggested_mapping: Dict[str, List[str]]
 
 @router.post("/efa", response_model=EFAResponse)
-async def perform_efa(request: EFARequest):
-    df = get_project_data("test-project-1")
+async def perform_efa(request: EFARequest, session_id: str = Depends(get_session_id), project_id: str = Depends(get_project_id)):
+    df = get_project_data(project_id, session_id)
     if df is None:
         raise HTTPException(status_code=400, detail="데이터가 존재하지 않습니다. 먼저 데이터를 업로드해주세요.")
     
     try:
         # 1. 데이터 로드 및 전처리
-        # df = get_project_data("test-project-1") (이미 위에서 로드함)
+        # df = get_project_data(project_id, session_id) (이미 위에서 로드함)
         
         # 선택된 컬럼만 필터링
         missing_cols = [col for col in request.columns if col not in df.columns]
@@ -218,8 +219,8 @@ class FrequencyResponse(BaseModel):
     frequencies: Dict[str, List[FrequencyResult]]
 
 @router.post("/frequency", response_model=FrequencyResponse)
-async def perform_frequency(request: FrequencyRequest):
-    df = get_project_data("test-project-1")
+async def perform_frequency(request: FrequencyRequest, session_id: str = Depends(get_session_id), project_id: str = Depends(get_project_id)):
+    df = get_project_data(project_id, session_id)
     if df is None:
         raise HTTPException(status_code=400, detail="데이터가 메모리에 존재하지 않습니다. 먼저 업로드해주세요.")
     frequencies = {}
@@ -271,8 +272,8 @@ from ..store import get_project_data
 from fastapi.responses import FileResponse
 
 @router.post("/frequency/export")
-async def export_frequency(request: FrequencyRequest):
-    df = get_project_data("test-project-1")
+async def export_frequency(request: FrequencyRequest, session_id: str = Depends(get_session_id), project_id: str = Depends(get_project_id)):
+    df = get_project_data(project_id, session_id)
     if df is None:
         raise HTTPException(status_code=400, detail="데이터가 메모리에 존재하지 않습니다. 먼저 업로드해주세요.")
     rows = []
@@ -329,8 +330,8 @@ class ReliabilityResponse(BaseModel):
     results: List[ReliabilityResult]
 
 @router.post("/reliability", response_model=ReliabilityResponse)
-async def perform_reliability(request: ReliabilityRequest):
-    df = get_project_data("test-project-1")
+async def perform_reliability(request: ReliabilityRequest, session_id: str = Depends(get_session_id), project_id: str = Depends(get_project_id)):
+    df = get_project_data(project_id, session_id)
     if df is None:
         raise HTTPException(status_code=400, detail="데이터가 메모리에 존재하지 않습니다. 먼저 업로드해주세요.")
     results = []
@@ -404,7 +405,7 @@ class ReliabilityExportRequest(BaseModel):
     footer: Optional[str] = None
 
 @router.post("/reliability/export")
-async def export_reliability(request: ReliabilityExportRequest):
+async def export_reliability(request: ReliabilityExportRequest, session_id: str = Depends(get_session_id), project_id: str = Depends(get_project_id)):
     out_df = pd.DataFrame(request.rows)
     excel_path = "data/reliability_analysis.xlsx"
     
@@ -436,8 +437,8 @@ class CorrelationResponse(BaseModel):
     matrix_n: List[List[int]]
 
 @router.post("/correlation", response_model=CorrelationResponse)
-async def perform_correlation(request: CorrelationRequest):
-    df = get_project_data("test-project-1")
+async def perform_correlation(request: CorrelationRequest, session_id: str = Depends(get_session_id), project_id: str = Depends(get_project_id)):
+    df = get_project_data(project_id, session_id)
     if df is None:
         raise HTTPException(status_code=400, detail="데이터가 메모리에 존재하지 않습니다. 먼저 업로드해주세요.")
     
@@ -497,7 +498,7 @@ class CorrelationExportRequest(BaseModel):
     rows: List[Dict[str, Any]]
 
 @router.post("/correlation/export")
-async def export_correlation(request: CorrelationExportRequest):
+async def export_correlation(request: CorrelationExportRequest, session_id: str = Depends(get_session_id), project_id: str = Depends(get_project_id)):
     out_df = pd.DataFrame(request.rows)
     excel_path = "data/correlation_analysis.xlsx"
     out_df.to_excel(excel_path, index=False)
@@ -565,9 +566,9 @@ def check_nan(obj):
     return False
 
 @router.post("/difference", response_model=DifferenceResponse)
-async def perform_difference(request: DifferenceRequest):
+async def perform_difference(request: DifferenceRequest, session_id: str = Depends(get_session_id), project_id: str = Depends(get_project_id)):
     try:
-        res = await _perform_difference(request)
+        res = await _perform_difference(request, session_id, project_id)
         if check_nan(res):
             with open("error.log", "w") as f:
                 f.write("NaN detected in response!\n")
@@ -580,8 +581,8 @@ async def perform_difference(request: DifferenceRequest):
             f.write(traceback.format_exc())
         raise e
 
-async def _perform_difference(request: DifferenceRequest):
-    df = get_project_data("test-project-1")
+async def _perform_difference(request: DifferenceRequest, session_id: str, project_id: str):
+    df = get_project_data(project_id, session_id)
     if df is None:
         raise HTTPException(status_code=400, detail="데이터가 메모리에 존재하지 않습니다. 먼저 업로드해주세요.")
     
@@ -769,7 +770,7 @@ class DifferenceExportRequest(BaseModel):
     footer: Optional[str] = None
 
 @router.post("/difference/export")
-async def export_difference(request: DifferenceExportRequest):
+async def export_difference(request: DifferenceExportRequest, session_id: str = Depends(get_session_id), project_id: str = Depends(get_project_id)):
     out_df = pd.DataFrame(request.rows)
     excel_path = "data/difference_analysis.xlsx"
     
@@ -820,8 +821,8 @@ class RegressionResponse(BaseModel):
     models: List[RegressionModelResult]
 
 @router.post("/regression", response_model=RegressionResponse)
-async def perform_regression(request: RegressionRequest):
-    df = get_project_data("test-project-1")
+async def perform_regression(request: RegressionRequest, session_id: str = Depends(get_session_id), project_id: str = Depends(get_project_id)):
+    df = get_project_data(project_id, session_id)
     if df is None:
         raise HTTPException(status_code=400, detail="데이터가 메모리에 존재하지 않습니다. 먼저 업로드해주세요.")
     
@@ -947,7 +948,7 @@ class RegressionExportRequest(BaseModel):
     footer: Optional[str] = None
 
 @router.post("/regression/export")
-async def export_regression(request: RegressionExportRequest):
+async def export_regression(request: RegressionExportRequest, session_id: str = Depends(get_session_id), project_id: str = Depends(get_project_id)):
     out_df = pd.DataFrame(request.rows)
     excel_path = "data/regression_analysis.xlsx"
     
@@ -982,8 +983,8 @@ class MediationRequest(BaseModel):
     seed: Optional[int] = None  # Bootstrap 재현용 시드 (지정 시 매번 동일한 CI)
 
 @router.post("/mediation")
-async def perform_mediation(request: MediationRequest):
-    df = get_project_data("test-project-1")
+async def perform_mediation(request: MediationRequest, session_id: str = Depends(get_session_id), project_id: str = Depends(get_project_id)):
+    df = get_project_data(project_id, session_id)
     if df is None:
         raise HTTPException(status_code=400, detail="데이터가 메모리에 존재하지 않습니다. 먼저 업로드해주세요.")
     
@@ -1061,7 +1062,7 @@ class MediationExportRequest(BaseModel):
     footer: Optional[str] = None
 
 @router.post("/mediation/export")
-async def export_mediation(request: MediationExportRequest):
+async def export_mediation(request: MediationExportRequest, session_id: str = Depends(get_session_id), project_id: str = Depends(get_project_id)):
     out_df = pd.DataFrame(request.rows)
     excel_path = "data/mediation_analysis.xlsx"
     
