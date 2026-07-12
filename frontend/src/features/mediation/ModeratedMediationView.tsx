@@ -19,7 +19,7 @@ export const ModeratedMediationView: React.FC = () => {
     const [useFixedSeed, setUseFixedSeed] = useState(true);
     const [seed, setSeed] = useState(1234);
     const [useSobel, setUseSobel] = useState(false);
-    const [useScheffe, setUseScheffe] = useState(false);
+
     const [isExporting1, setIsExporting1] = useState(false);
     const [isExporting2, setIsExporting2] = useState(false);
 

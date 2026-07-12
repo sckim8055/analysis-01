@@ -15,7 +15,7 @@ export const MediationView: React.FC = () => {
   const [useBootstrapping, setUseBootstrapping] = useState(false);
   const [bootCount, setBootCount] = useState(5000);
   const [useSobel, setUseSobel] = useState(false);
-  const [useScheffe, setUseScheffe] = useState(false);
+
   const [isExporting1, setIsExporting1] = useState(false);
   const [isExporting2, setIsExporting2] = useState(false);
 
@@ -691,10 +691,7 @@ export const MediationView: React.FC = () => {
                                     <input type="checkbox" checked={useSobel} onChange={(e) => setUseSobel(e.target.checked)} />
                                     Sobel Test (Z-Score)
                                 </label>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'not-allowed', opacity: 0.5 }}>
-                                    <input type="checkbox" checked={useScheffe} onChange={(e) => setUseScheffe(e.target.checked)} disabled />
-                                    Scheffe 사후분석 (ANOVA 전용)
-                                </label>
+
                             </div>
                             <button 
                                 className="btn-primary" 

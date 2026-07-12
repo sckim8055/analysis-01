@@ -19,7 +19,7 @@ export const ModerationView: React.FC = () => {
     const [useFixedSeed, setUseFixedSeed] = useState(true);
     const [seed, setSeed] = useState(1234);
     const [useSobel, setUseSobel] = useState(false);
-    const [useScheffe, setUseScheffe] = useState(false);
+
     const [isExporting1, setIsExporting1] = useState(false);
     const [isExporting2, setIsExporting2] = useState(false);
 
@@ -439,8 +439,8 @@ ightarrow$ 종속변수):**
                 </div>
                 <div style={{ display: 'flex', gap: '12px' }}>
                     
-                    <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => setCurrentStep('moderation')}>
-                        조절효과 분석으로 이동 ▶
+                    <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => setCurrentStep('moderated_mediation')}>
+                        조절된 매개효과 분석으로 이동 ▶
                     </button>
                 </div>
             </div>
