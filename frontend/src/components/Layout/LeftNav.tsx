@@ -6,6 +6,7 @@ import {
   Scale, Layers, LineChart, Network, 
   Settings2, FileText
 } from 'lucide-react';
+import { trackPageView } from '../../utils/analytics';
 import styles from './Layout.module.css';
 
 const navItems = [
@@ -45,7 +46,10 @@ export const LeftNav: React.FC = () => {
           <div 
             key={item.id}
             className={`${styles.navItem} ${isActive ? styles.active : ''}`}
-            onClick={() => setCurrentStep(item.id as AnalysisStep)}
+            onClick={() => {
+              setCurrentStep(item.id as AnalysisStep);
+              trackPageView(item.label!);
+            }}
           >
             <Icon className={styles.navIcon} />
             <span className={styles.navLabel}>{item.label}</span>

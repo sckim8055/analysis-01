@@ -3,6 +3,7 @@ import { Download } from 'lucide-react';
 import { useAnalysisStore } from '../../store/analysisStore';
 import { useProjectStore } from '../../store/projectStore';
 import { apiFetch } from '../../utils/apiClient';
+import { trackReportDownloaded } from '../../utils/analytics';
 
 
 export const ReportView: React.FC = () => {
@@ -48,6 +49,7 @@ export const ReportView: React.FC = () => {
       a.click();
       window.URL.revokeObjectURL(url);
       a.remove();
+      trackReportDownloaded(reportFormat);
     } catch (error) {
       console.error(error);
       alert('보고서 다운로드 중 오류가 발생했습니다.');

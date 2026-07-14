@@ -5,6 +5,7 @@ import { useProjectStore } from '../../store/projectStore';
 import { useAnalysisStore } from '../../store/analysisStore';
 import { UploadCloud, FileSpreadsheet, CheckCircle, Link } from 'lucide-react';
 import { apiFetch } from '../../utils/apiClient';
+import { trackFileUploaded } from '../../utils/analytics';
 
 
 export const UploadView: React.FC = () => {
@@ -46,6 +47,7 @@ export const UploadView: React.FC = () => {
           columns: data.columns || [],
           rowCount: data.row_count || 0
         });
+        trackFileUploaded(selectedFile.name, data.row_count || 0, (data.columns || []).length);
 
       } catch (err) {
         console.error(err);
