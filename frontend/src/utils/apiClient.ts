@@ -54,7 +54,9 @@ export const generateAiInterpretation = async (analysisType: string, results: an
   });
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.detail || 'AI 해석 생성 중 오류가 발생했습니다.');
+    const detail = errorData.detail;
+    const errorMessage = typeof detail === 'string' ? detail : JSON.stringify(detail || errorData);
+    throw new Error(errorMessage || 'AI 해석 요청 실패');
   }
   const data = await res.json();
   return data.interpretation;
