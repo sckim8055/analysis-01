@@ -33,7 +33,7 @@ class AIInterpretRequest(BaseModel):
     analysis_type: str
     results: Dict[str, Any]
     prompt_context: Optional[str] = None
-    model: Optional[str] = 'gemini-1.5-flash'
+    model: Optional[str] = 'gemini-flash-latest'
 
 @router.post("/interpret")
 async def interpret_results(req: AIInterpretRequest):
@@ -56,14 +56,16 @@ async def interpret_results(req: AIInterpretRequest):
         prompt += f"추가 맥락: {req.prompt_context}\n"
     prompt += f"통계 결과 데이터 JSON:\n{req.results}\n\n위 데이터를 바탕으로 완벽한 학술 논문체 해석문(결론 및 시사점 포함)을 작성해주세요."
 
-    target_model = req.model if req.model else 'gemini-1.5-flash'
+    target_model = req.model if req.model else 'gemini-flash-latest'
     
     # 모델명에 따른 폴백(Fallback) 리스트 구성
     models_to_try = [target_model]
-    if target_model == 'gemini-1.5-flash':
-        models_to_try = ['gemini-1.5-flash', 'gemini-1.5-flash-002', 'gemini-1.5-flash-001', 'gemini-1.5-flash-8b', 'gemini-1.5-flash-latest']
-    elif target_model == 'gemini-1.5-pro':
-        models_to_try = ['gemini-1.5-pro', 'gemini-1.5-pro-002', 'gemini-1.5-pro-001', 'gemini-1.5-pro-latest']
+    if target_model == 'gemini-flash-latest':
+        models_to_try = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
+    elif target_model == 'gemini-3.5-flash':
+        models_to_try = ['gemini-3.5-flash', 'gemini-2.5-flash', 'gemini-flash-latest']
+    elif target_model == 'gemini-pro-latest':
+        models_to_try = ['gemini-pro-latest', 'gemini-2.5-pro', 'gemini-1.5-pro']
 
     last_err = None
     for m in models_to_try:

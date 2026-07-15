@@ -22,7 +22,7 @@ export const AiInterpretationPanel: React.FC<AiInterpretationPanelProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'basic' | 'ai'>(cachedAi ? 'ai' : 'basic');
-  const [selectedModel, setSelectedModel] = useState<string>('gemini-1.5-flash');
+  const [selectedModel, setSelectedModel] = useState<string>('gemini-flash-latest');
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -70,9 +70,9 @@ export const AiInterpretationPanel: React.FC<AiInterpretationPanelProps> = ({
             onChange={(e) => setSelectedModel(e.target.value)}
             style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-base)', fontSize: '13px', color: 'var(--text-primary)' }}
           >
-            <option value="gemini-1.5-flash">Gemini 1.5 Flash (빠름, 안정적)</option>
-            <option value="gemini-2.0-flash">Gemini 2.0 Flash (최신 모델)</option>
-            <option value="gemini-1.5-pro">Gemini 1.5 Pro (고성능)</option>
+            <option value="gemini-flash-latest">Gemini Flash (빠름, 안정적)</option>
+            <option value="gemini-3.5-flash">Gemini 3.5 Flash (최신 모델)</option>
+            <option value="gemini-pro-latest">Gemini Pro (고성능)</option>
           </select>
           <button
             className={viewMode === 'ai' ? "btn-primary" : "btn-secondary"}

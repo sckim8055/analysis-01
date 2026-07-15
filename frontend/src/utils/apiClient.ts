@@ -41,7 +41,7 @@ export const apiFetch = async (url: string, options: RequestInit = {}): Promise<
   });
 };
 
-export const generateAiInterpretation = async (analysisType: string, results: any, promptContext?: string, aiModel: string = 'gemini-1.5-flash'): Promise<string> => {
+export const generateAiInterpretation = async (analysisType: string, results: any, promptContext?: string, aiModel: string = 'gemini-flash-latest'): Promise<string> => {
   const res = await apiFetch('/api/ai/interpret', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
