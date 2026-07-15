@@ -276,8 +276,8 @@ export const FactorAnalysisView: React.FC = () => {
     
     // Generate and cache interpretation for this variable's factor analysis
     const varName = activeVarContext?.v.name || activeVarId;
-    const methodLabel = factorSettings.method === 'ml' ? '최대우도법(ML)' : factorSettings.method === 'paf' ? '주축요인법(PAF)' : '주성분분석(PCA)';
-    const rotationLabel = factorSettings.rotation === 'varimax' ? 'Varimax 직교회전' : factorSettings.rotation === 'promax' ? 'Promax 사각회전' : '회전 없음';
+    const methodLabel = factorSettings.extraction === 'efa' ? '탐색적 요인분석(EFA)' : '주성분분석(PCA)';
+    const rotationLabel = factorSettings.rotation === 'varimax' ? 'Varimax 직교회전' : factorSettings.rotation === 'oblimin' ? 'Oblimin 사각회전' : '회전 없음';
     
     let interpText = `'${varName}'의 구성개념에 대한 타당성을 검증하기 위하여 탐색적 요인분석(Exploratory Factor Analysis)을 실시하였다. 요인추출 방법으로는 ${methodLabel}을, 요인회전 방법으로는 ${rotationLabel}을 적용하였다.\n\n`;
     
@@ -330,7 +330,7 @@ export const FactorAnalysisView: React.FC = () => {
     
     useAnalysisStore.getState().setCachedResult(`factor_${activeVarId}`, {
       results: { factorNames, matrixItems, kmoValue, bartlettData, varianceData, droppedItems },
-      settings: { method: factorSettings.method, rotation: factorSettings.rotation },
+      settings: { extraction: factorSettings.extraction, rotation: factorSettings.rotation },
       interpretation: interpText.trim()
     });
     
