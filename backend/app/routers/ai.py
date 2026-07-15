@@ -57,18 +57,32 @@ async def interpret_results(req: AIInterpretRequest):
     prompt += f"통계 결과 데이터 JSON:\n{req.results}\n\n위 데이터를 바탕으로 완벽한 학술 논문체 해석문(결론 및 시사점 포함)을 작성해주세요."
 
     target_model = req.model if req.model else 'gemini-1.5-flash'
+    
+    # 모델명에 따른 폴백(Fallback) 리스트 구성
+    models_to_try = [target_model]
+    if target_model == 'gemini-1.5-flash':
+        models_to_try = ['gemini-1.5-flash', 'gemini-1.5-flash-002', 'gemini-1.5-flash-001', 'gemini-1.5-flash-8b', 'gemini-1.5-flash-latest']
+    elif target_model == 'gemini-1.5-pro':
+        models_to_try = ['gemini-1.5-pro', 'gemini-1.5-pro-002', 'gemini-1.5-pro-001', 'gemini-1.5-pro-latest']
 
-    try:
-        response = c.models.generate_content(
-            model=target_model,
-            contents=prompt,
-            config=genai.types.GenerateContentConfig(
-                system_instruction=system_prompt,
-                temperature=0.3,
+    last_err = None
+    for m in models_to_try:
+        try:
+            response = c.models.generate_content(
+                model=m,
+                contents=prompt,
+                config=genai.types.GenerateContentConfig(
+                    system_instruction=system_prompt,
+                    temperature=0.3,
+                )
             )
-        )
-        return {"interpretation": response.text}
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"AI 생성 중 오류가 발생했습니다: {str(e)}")
+            return {"interpretation": response.text}
+        except Exception as e:
+            last_err = e
+            err_str = str(e)
+            if "404" in err_str or "NOT_FOUND" in err_str:
+                continue # 다음 모델로 재시도
+            else:
+                break # 429 등 다른 에러면 즉시 중단
+                
+    raise HTTPException(status_code=500, detail=f"AI 생성 중 오류가 발생했습니다: {last_err}")
