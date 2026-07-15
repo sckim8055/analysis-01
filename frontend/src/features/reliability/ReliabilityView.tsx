@@ -3,6 +3,7 @@ import { useAnalysisStore } from '../../store/analysisStore';
 import { useUiStore } from '../../store/uiStore';
 import { Download, FileText } from 'lucide-react';
 import { apiFetch } from '../../utils/apiClient';
+import { AiInterpretationPanel } from '../../components/AiInterpretationPanel';
 
 
 export const ReliabilityView: React.FC = () => {
@@ -312,36 +313,12 @@ export const ReliabilityView: React.FC = () => {
 
         {/* 오른쪽: 자동 해석 영역 */}
         <div className="glass-panel" style={{ flex: '0.8', display: 'flex', flexDirection: 'column', borderRadius: '12px', border: '1px solid var(--border-color)', padding: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-            <FileText size={24} style={{ color: 'var(--primary)' }} />
-            <h3 style={{ margin: 0 }}>논문 텍스트 자동 해석</h3>
-          </div>
-
-          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '24px' }}>
-            우측의 신뢰도 분석 표를 바탕으로 논문에 즉시 복사하여 사용할 수 있는 초안 텍스트입니다. 결과 해석에 참고하시기 바랍니다.
-          </p>
-
-          <div
-            style={{
-              flex: 1,
-              backgroundColor: 'var(--bg-base)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '8px',
-              padding: '24px',
-              fontSize: '15px',
-              lineHeight: '1.8',
-              overflowY: 'auto',
-              whiteSpace: 'pre-wrap'
-            }}
-            contentEditable
-            suppressContentEditableWarning
-          >
-            {generateInterpretation()}
-          </div>
-
-          <div style={{ marginTop: '16px', textAlign: 'right', fontSize: '13px', color: 'var(--text-muted)' }}>
-            * 텍스트 영역을 클릭하여 내용을 직접 수정하거나 복사할 수 있습니다.
-          </div>
+          <AiInterpretationPanel 
+            analysisType="신뢰도 분석 (Cronbach's α)"
+            results={tableData}
+            cacheKey="reliability"
+            defaultText={generateInterpretation()}
+          />
         </div>
 
       </div>

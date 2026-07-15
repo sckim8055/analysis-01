@@ -66,7 +66,7 @@ def add_analysis_results_to_word(doc, cached_results: Dict[str, Any]):
             for sk, sv in settings.items():
                 doc.add_paragraph(f"- {sk}: {sv}")
         
-        interpretation = cache.get("interpretation", "")
+        interpretation = cache.get("aiInterpretation") or cache.get("interpretation", "")
         if interpretation:
             doc.add_heading("결과 해석(Interpretation)", level=3)
             doc.add_paragraph(interpretation)

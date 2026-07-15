@@ -27,18 +27,18 @@ Traceback (most recent call last):
     await app(scope, receive, sender)
   File "D:\test\claudecode\files\analysis-01\backend\venv\lib\site-packages\fastapi\routing.py", line 107, in app
     response = await f(request)
-  File "D:\test\claudecode\files\analysis-01\backend\venv\lib\site-packages\fastapi\routing.py", line 460, in app
-    response = actual_response_class(content, **response_args)
-  File "D:\test\claudecode\files\analysis-01\backend\venv\lib\site-packages\starlette\responses.py", line 189, in __init__
-    super().__init__(content, status_code, headers, media_type, background)
-  File "D:\test\claudecode\files\analysis-01\backend\venv\lib\site-packages\starlette\responses.py", line 46, in __init__
-    self.body = self.render(content)
-  File "D:\test\claudecode\files\analysis-01\backend\venv\lib\site-packages\starlette\responses.py", line 192, in render
-    return json.dumps(
-  File "C:\Users\test\AppData\Local\Programs\Python\Python39\lib\json\__init__.py", line 234, in dumps
-    return cls(
-  File "C:\Users\test\AppData\Local\Programs\Python\Python39\lib\json\encoder.py", line 199, in encode
-    chunks = self.iterencode(o, _one_shot=True)
-  File "C:\Users\test\AppData\Local\Programs\Python\Python39\lib\json\encoder.py", line 257, in iterencode
-    return _iterencode(o, 0)
-ValueError: Out of range float values are not JSON compliant
+  File "D:\test\claudecode\files\analysis-01\backend\venv\lib\site-packages\fastapi\routing.py", line 448, in app
+    content = await serialize_response(
+  File "D:\test\claudecode\files\analysis-01\backend\venv\lib\site-packages\fastapi\routing.py", line 286, in serialize_response
+    raise ResponseValidationError(
+fastapi.exceptions.ResponseValidationError: 7 validation errors:
+  {'type': 'missing', 'loc': ('response', 0, 'text'), 'msg': 'Field required', 'input': {'type': '주효과', 'main_text': '독1은(는) 매1에 정(+)의 영향을 미칠 것이다.', 'sub_hypotheses': ['독12은(는) 매1에 정(+)의 영향을 미칠 것이다.', '독11은(는) 매1에 정(+)의 영향을 미칠 것이다.']}}
+  {'type': 'missing', 'loc': ('response', 1, 'text'), 'msg': 'Field required', 'input': {'type': '주효과', 'main_text': '독1은(는) 매2에 정(+)의 영향을 미칠 것이다.', 'sub_hypotheses': ['독12은(는) 매23에 정(+)의 영향을 미칠 것이다.', '독12은(는) 매21에 정(+)의 영향을 미칠 것이다.', '독12은(는) 매22에 정(+)의 영향을 미칠 것이다.', '독12은(는) 매25에 정(+)의 영향을 미칠 것이다.', '독12은(는) 매24에 정(+)의 영향을 미칠 것이다.', '독11은(는) 매23에 정(+)의 영향을 미칠 것이다.', '독11은(는) 매21에 정(+)의 영향을 미칠 것이다.', '독11은(는) 매22에 정(+)의 영향을 미칠 것이다.', '독11은(는) 매25에 정(+)의 영향을 미칠 것이다.', '독11은(는) 매24에 정(+)의 영향을 미칠 것이다.']}}
+  {'type': 'missing', 'loc': ('response', 2, 'text'), 'msg': 'Field required', 'input': {'type': '주효과', 'main_text': '독1은(는) 종에 정(+)의 영향을 미칠 것이다.', 'sub_hypotheses': ['독12은(는) 종에 정(+)의 영향을 미칠 것이다.', '독11은(는) 종에 정(+)의 영향을 미칠 것이다.']}}
+  {'type': 'missing', 'loc': ('response', 3, 'text'), 'msg': 'Field required', 'input': {'type': '주효과', 'main_text': '매1은(는) 종에 정(+)의 영향을 미칠 것이다.', 'sub_hypotheses': []}}
+  {'type': 'missing', 'loc': ('response', 4, 'text'), 'msg': 'Field required', 'input': {'type': '주효과', 'main_text': '매2은(는) 종에 정(+)의 영향을 미칠 것이다.', 'sub_hypotheses': ['매23은(는) 종에 정(+)의 영향을 미칠 것이다.', '매21은(는) 종에 정(+)의 영향을 미칠 것이다.', '매22은(는) 종에 정(+)의 영향을 미칠 것이다.', '매25은(는) 종에 정(+)의 영향을 미칠 것이다.', '매24은(는) 종에 정(+)의 영향을 미칠 것이다.']}}
+  {'type': 'missing', 'loc': ('response', 5, 'text'), 'msg': 'Field required', 'input': {'type': '매개효과', 'main_text': '매1은(는) 독1과(와) 종 사이의 관계를 매개할 것이다.', 'sub_hypotheses': ['매1은(는) 독12과(와) 종 사이의 관계를 매개할 것이다.', '매1은(는) 독11과(와) 종 사이의 관계를 매개할 것이다.']}}
+  {'type': 'missing', 'loc': ('response', 6, 'text'), 'msg': 'Field required', 'input': {'type': '매개효과', 'main_text': '매2은(는) 독1과(와) 종 사이의 관계를 매개할 것이다.', 'sub_hypotheses': ['매23은(는) 독12과(와) 종 사이의 관계를 매개할 것이다.', '매21은(는) 독12과(와) 종 사이의 관계를 매개할 것이다.', '매22은(는) 독12과(와) 종 사이의 관계를 매개할 것이다.', '매25은(는) 독12과(와) 종 사이의 관계를 매개할 것이다.', '매24은(는) 독12과(와) 종 사이의 관계를 매개할 것이다.', '매23은(는) 독11과(와) 종 사이의 관계를 매개할 것이다.', '매21은(는) 독11과(와) 종 사이의 관계를 매개할 것이다.', '매22은(는) 독11과(와) 종 사이의 관계를 매개할 것이다.', '매25은(는) 독11과(와) 종 사이의 관계를 매개할 것이다.', '매24은(는) 독11과(와) 종 사이의 관계를 매개할 것이다.']}}
+
+  File "D:\test\claudecode\files\analysis-01\backend\app\routers\hypotheses.py", line 16, in generate_hypotheses
+    POST /api/hypotheses/generate

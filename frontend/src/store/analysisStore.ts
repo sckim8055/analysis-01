@@ -44,8 +44,8 @@ interface AnalysisState {
   auditLogs: AuditLog[];
   addAuditLog: (log: Omit<AuditLog, 'id' | 'timestamp'>) => void;
   
-  cachedResults: Record<string, { results: any; settings: any; interpretation: string }>;
-  setCachedResult: (step: string, data: { results: any; settings?: any; interpretation?: string }) => void;
+  cachedResults: Record<string, { results: any; settings: any; interpretation: string; aiInterpretation?: string }>;
+  setCachedResult: (step: string, data: { results: any; settings?: any; interpretation?: string; aiInterpretation?: string }) => void;
 
   // Reset entire analysis state (e.g. on new file upload)
   resetStore: () => void;

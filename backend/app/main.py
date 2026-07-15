@@ -2,7 +2,7 @@ import os
 import sentry_sdk
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import upload, analysis, report, hypotheses
+from .routers import upload, analysis, report, hypotheses, ai
 
 # Sentry Error Tracking
 sentry_dsn = os.environ.get("SENTRY_DSN", "")
@@ -43,6 +43,7 @@ app.include_router(upload.router, prefix="/api")
 app.include_router(analysis.router, prefix="/api/analysis")
 app.include_router(report.router, prefix="/api/analysis")
 app.include_router(hypotheses.router)
+app.include_router(ai.router, prefix="/api/ai")
 
 @app.api_route("/", methods=["GET", "HEAD"])
 def read_root():

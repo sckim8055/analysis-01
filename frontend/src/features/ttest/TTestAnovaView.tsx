@@ -4,6 +4,7 @@ import { useProjectStore } from '../../store/projectStore';
 import { useUiStore } from '../../store/uiStore';
 import { Download, FileText, Settings2, RefreshCw } from 'lucide-react';
 import { apiFetch } from '../../utils/apiClient';
+import { AiInterpretationPanel } from '../../components/AiInterpretationPanel';
 
 
 export const TTestAnovaView: React.FC = () => {
@@ -537,32 +538,12 @@ export const TTestAnovaView: React.FC = () => {
 
                     {/* 자동 해석 영역 */}
                     <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRadius: '12px', border: '1px solid var(--border-color)', padding: '24px', minHeight: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                            <FileText size={20} style={{ color: 'var(--primary)' }} />
-                            <h3 style={{ margin: 0, fontSize: '16px' }}>논문 텍스트 자동 해석</h3>
-                        </div>
-
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '16px' }}>
-                            기술통계 및 차이분석(t-test/ANOVA) 결과를 바탕으로 논문에 즉시 사용할 수 있는 해석 초안입니다.
-                        </p>
-
-                        <div
-                            style={{
-                                flex: 1,
-                                backgroundColor: 'var(--bg-base)',
-                                border: '1px solid var(--border-color)',
-                                borderRadius: '8px',
-                                padding: '24px',
-                                fontSize: '14px',
-                                lineHeight: '1.8',
-                                overflowY: 'auto',
-                                whiteSpace: 'pre-wrap'
-                            }}
-                            contentEditable
-                            suppressContentEditableWarning
-                        >
-                            {generateInterpretation()}
-                        </div>
+                        <AiInterpretationPanel 
+                            analysisType="독립표본 t-검정 및 일원배치 분산분석(ANOVA)"
+                            results={results}
+                            cacheKey="ttest"
+                            defaultText={generateInterpretation()}
+                        />
                     </div>
                 </div>
             </div>

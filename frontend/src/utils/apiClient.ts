@@ -40,3 +40,21 @@ export const apiFetch = async (url: string, options: RequestInit = {}): Promise<
     headers,
   });
 };
+
+export const generateAiInterpretation = async (analysisType: string, results: any, promptContext?: string): Promise<string> => {
+  const res = await apiFetch('/api/ai/interpret', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      analysis_type: analysisType,
+      results,
+      prompt_context: promptContext
+    })
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'AI 해석 생성 중 오류가 발생했습니다.');
+  }
+  const data = await res.json();
+  return data.interpretation;
+};
