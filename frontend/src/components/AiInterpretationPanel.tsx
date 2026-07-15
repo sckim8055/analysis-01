@@ -112,8 +112,8 @@ export const AiInterpretationPanel: React.FC<AiInterpretationPanelProps> = ({
       </div>
       
       {cachedAi && (
-        <div style={{ marginTop: '8px', textAlign: 'right', fontSize: '12px', color: 'var(--primary)', fontWeight: 'bold' }}>
-          ✨ Gemini 2.0 AI가 작성한 맞춤형 심층 해석입니다.
+        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-color)', fontSize: '12px', color: 'var(--text-secondary)', textAlign: 'right', fontWeight: 500 }}>
+          ✨ Gemini AI가 작성한 맞춤형 심층 해석입니다.
         </div>
       )}
     </>
