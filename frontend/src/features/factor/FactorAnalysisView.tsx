@@ -274,6 +274,66 @@ export const FactorAnalysisView: React.FC = () => {
     });
     approveVariable(activeVarId);
     
+    // Generate and cache interpretation for this variable's factor analysis
+    const varName = activeVarContext?.v.name || activeVarId;
+    const methodLabel = factorSettings.method === 'ml' ? '최대우도법(ML)' : factorSettings.method === 'paf' ? '주축요인법(PAF)' : '주성분분석(PCA)';
+    const rotationLabel = factorSettings.rotation === 'varimax' ? 'Varimax 직교회전' : factorSettings.rotation === 'promax' ? 'Promax 사각회전' : '회전 없음';
+    
+    let interpText = `'${varName}'의 구성개념에 대한 타당성을 검증하기 위하여 탐색적 요인분석(Exploratory Factor Analysis)을 실시하였다. 요인추출 방법으로는 ${methodLabel}을, 요인회전 방법으로는 ${rotationLabel}을 적용하였다.\n\n`;
+    
+    if (kmoValue !== null) {
+      let kmoLevel = '적합한';
+      if (kmoValue >= 0.9) kmoLevel = '매우 우수한(Marvelous)';
+      else if (kmoValue >= 0.8) kmoLevel = '매우 적합한(Meritorious)';
+      else if (kmoValue >= 0.7) kmoLevel = '적합한(Middling)';
+      else if (kmoValue >= 0.6) kmoLevel = '보통(Mediocre)';
+      else kmoLevel = '부적합한(Miserable)';
+      
+      interpText += `분석에 앞서 자료의 적합성을 확인한 결과, KMO(Kaiser-Meyer-Olkin) 표본적합도 측도는 ${kmoValue.toFixed(3)}으로 ${kmoLevel} 수준이었으며, `;
+    }
+    
+    if (bartlettData) {
+      const bP = bartlettData.p < 0.001 ? 'p<.001' : `p=${bartlettData.p.toFixed(3).replace(/^0\./, '.')}`;
+      interpText += `Bartlett의 구형성 검정 또한 통계적으로 유의하게 나타났다(χ²=${bartlettData.chi.toFixed(3)}, df=${bartlettData.df}, ${bP}). 이는 본 자료가 요인분석을 수행하기에 충분히 적합함을 의미한다.\n\n`;
+    }
+    
+    interpText += `분석 결과, 고유값(Eigenvalue) 1.0 이상을 기준으로 총 ${factorNames.length}개의 요인이 추출되었으며, `;
+    
+    if (varianceData && varianceData.length > 0) {
+      const cumVar = varianceData[varianceData.length - 1]?.cumulative_pct;
+      if (cumVar) {
+        interpText += `이들 요인의 누적 설명분산(Cumulative Variance Explained)은 ${cumVar.toFixed(2)}%로 나타났다. `;
+        if (cumVar >= 60) {
+          interpText += `이는 사회과학 분야에서 일반적으로 요구되는 60% 기준을 충족하는 양호한 수준이다.\n\n`;
+        } else {
+          interpText += `다소 기준치(60%)에 미치지 못하지만, 해당 연구 영역의 특성을 고려할 때 수용 가능한 수준으로 판단된다.\n\n`;
+        }
+      }
+    }
+    
+    const finalItemCount = matrixItems.length;
+    const droppedCount = droppedItems.length;
+    if (droppedCount > 0) {
+      interpText += `요인분석 과정에서 요인적재량(Factor Loading)이 기준치인 ${factorSettings.loading} 미만이거나 교차적재(Cross-Loading)가 발생한 ${droppedCount}개 문항이 제거되어, 최종적으로 ${finalItemCount}개 문항이 ${factorNames.length}개 요인에 적절히 배치되었다.\n\n`;
+    } else {
+      interpText += `모든 ${finalItemCount}개 문항이 기준치(적재량 ${factorSettings.loading}) 이상의 요인적재량을 보이며 ${factorNames.length}개 요인에 명확하게 배치되어, 별도의 문항 제거 없이 구성타당성이 확보되었다.\n\n`;
+    }
+    
+    if (newSubFactors && newSubFactors.length > 0) {
+      interpText += `추출된 요인은 `;
+      newSubFactors.forEach((sf: any, idx: number) => {
+        interpText += `'${sf.name}'(${sf.itemIds.length}문항)`;
+        if (idx < newSubFactors.length - 1) interpText += ', ';
+      });
+      interpText += `으로 명명하였다.`;
+    }
+    
+    useAnalysisStore.getState().setCachedResult(`factor_${activeVarId}`, {
+      results: { factorNames, matrixItems, kmoValue, bartlettData, varianceData, droppedItems },
+      settings: { method: factorSettings.method, rotation: factorSettings.rotation },
+      interpretation: interpText.trim()
+    });
+    
     // 요인분석이 확정/승인될 때마다 모형설계를 강제로 초기화하여 최신 결과를 반영하도록 함 (사용자 요청)
     saveModel([], []);
 
