@@ -33,6 +33,7 @@ class AIInterpretRequest(BaseModel):
     analysis_type: str
     results: Dict[str, Any]
     prompt_context: Optional[str] = None
+    model: Optional[str] = 'gemini-1.5-flash'
 
 @router.post("/interpret")
 async def interpret_results(req: AIInterpretRequest):
@@ -55,9 +56,11 @@ async def interpret_results(req: AIInterpretRequest):
         prompt += f"추가 맥락: {req.prompt_context}\n"
     prompt += f"통계 결과 데이터 JSON:\n{req.results}\n\n위 데이터를 바탕으로 완벽한 학술 논문체 해석문(결론 및 시사점 포함)을 작성해주세요."
 
+    target_model = req.model if req.model else 'gemini-1.5-flash'
+
     try:
         response = c.models.generate_content(
-            model='gemini-1.5-flash',
+            model=target_model,
             contents=prompt,
             config=genai.types.GenerateContentConfig(
                 system_instruction=system_prompt,

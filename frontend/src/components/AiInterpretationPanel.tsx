@@ -22,13 +22,14 @@ export const AiInterpretationPanel: React.FC<AiInterpretationPanelProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'basic' | 'ai'>(cachedAi ? 'ai' : 'basic');
+  const [selectedModel, setSelectedModel] = useState<string>('gemini-1.5-flash');
 
   const handleGenerate = async () => {
     setLoading(true);
     setError(null);
     setViewMode('ai');
     try {
-      const text = await generateAiInterpretation(analysisType, results);
+      const text = await generateAiInterpretation(analysisType, results, undefined, selectedModel);
       setCachedResult(cacheKey, { aiInterpretation: text });
     } catch (err: any) {
       setError(err.message || 'AI 해석 생성 중 오류가 발생했습니다.');
@@ -63,15 +64,26 @@ export const AiInterpretationPanel: React.FC<AiInterpretationPanelProps> = ({
           </label>
         </div>
         
-        <button
-          className={viewMode === 'ai' ? "btn-primary" : "btn-secondary"}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '13px', whiteSpace: 'nowrap' }}
-          onClick={handleGenerate}
-          disabled={loading}
-        >
-          {loading && <RefreshCw size={14} className="spin" />}
-          {loading ? 'AI 분석 중...' : (cachedAi ? 'AI 재해석' : 'AI 해석(GPT) 생성')}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <select 
+            value={selectedModel} 
+            onChange={(e) => setSelectedModel(e.target.value)}
+            style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-base)', fontSize: '13px', color: 'var(--text-primary)' }}
+          >
+            <option value="gemini-1.5-flash">Gemini 1.5 Flash (빠름, 안정적)</option>
+            <option value="gemini-2.0-flash">Gemini 2.0 Flash (최신 모델)</option>
+            <option value="gemini-1.5-pro">Gemini 1.5 Pro (고성능)</option>
+          </select>
+          <button
+            className={viewMode === 'ai' ? "btn-primary" : "btn-secondary"}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '13px', whiteSpace: 'nowrap' }}
+            onClick={handleGenerate}
+            disabled={loading}
+          >
+            {loading && <RefreshCw size={14} className="spin" />}
+            {loading ? 'AI 분석 중...' : (cachedAi ? 'AI 재해석' : 'AI 해석 생성')}
+          </button>
+        </div>
       </div>
 
       {error && (
