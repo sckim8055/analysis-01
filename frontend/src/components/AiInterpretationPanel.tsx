@@ -21,10 +21,12 @@ export const AiInterpretationPanel: React.FC<AiInterpretationPanelProps> = ({
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'basic' | 'ai'>(cachedAi ? 'ai' : 'basic');
 
   const handleGenerate = async () => {
     setLoading(true);
     setError(null);
+    setViewMode('ai');
     try {
       const text = await generateAiInterpretation(analysisType, results);
       setCachedResult(cacheKey, { aiInterpretation: text });
@@ -35,22 +37,40 @@ export const AiInterpretationPanel: React.FC<AiInterpretationPanelProps> = ({
     }
   };
 
-  const textToDisplay = cachedAi || defaultText;
+  const textToDisplay = viewMode === 'ai' && cachedAi ? cachedAi : defaultText;
 
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: 0, flex: 1, paddingRight: '16px' }}>
-          우측 표를 바탕으로 논문에 즉시 복사하여 사용할 수 있는 해석문입니다. (AI 심층 해석을 권장합니다)
-        </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: viewMode === 'basic' ? 'bold' : 'normal' }}>
+            <input 
+              type="radio" 
+              checked={viewMode === 'basic'} 
+              onChange={() => setViewMode('basic')} 
+              style={{ accentColor: 'var(--primary)' }}
+            />
+            APA 7th 기본 해석
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: viewMode === 'ai' ? 'bold' : 'normal' }}>
+            <input 
+              type="radio" 
+              checked={viewMode === 'ai'} 
+              onChange={() => setViewMode('ai')} 
+              style={{ accentColor: 'var(--primary)' }}
+            />
+            AI 해석(GPT)
+          </label>
+        </div>
+        
         <button
-          className="btn-primary"
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '14px', whiteSpace: 'nowrap' }}
+          className={viewMode === 'ai' ? "btn-primary" : "btn-secondary"}
+          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '13px', whiteSpace: 'nowrap' }}
           onClick={handleGenerate}
           disabled={loading}
         >
-          {loading ? <RefreshCw size={16} className="spin" /> : <Bot size={16} />}
-          {loading ? 'AI 분석 중...' : (cachedAi ? 'AI 재해석' : '🤖 AI 심층 해석 (Beta)')}
+          {loading && <RefreshCw size={14} className="spin" />}
+          {loading ? 'AI 분석 중...' : (cachedAi ? 'AI 재해석' : 'AI 해석(GPT) 생성')}
         </button>
       </div>
 
