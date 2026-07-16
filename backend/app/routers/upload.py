@@ -7,7 +7,7 @@ from fastapi import Depends, APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import List, Dict, Any
-from ..store import set_project_data, get_project_data
+from ..store import set_project_data, get_project_data, update_project_data
 
 router = APIRouter()
 
@@ -161,6 +161,7 @@ async def recode_data(req: RecodeRequest, session_id: str = Depends(get_session_
         df[req.column_name] = df[req.column_name].replace(req.old_values, req.new_value)
         
         # Save back to store and disk
+        update_project_data(project_id, session_id, df)
         
         return {"success": True, "message": "성공적으로 병합되었습니다."}
     except Exception as e:
@@ -218,12 +219,14 @@ async def recode_data_map(req: RecodeMapRequest, session_id: str = Depends(get_s
         # We need to ensure types match for replacing. E.g. replacing '55' (str) or 55 (int).
         # Convert mapping keys to match the column type if possible, or just replace as is.
         # But safest is replacing exact matches.
+        df[req.column_name] = df[req.column_name].astype(str)
         df[req.column_name] = df[req.column_name].replace(req.mappings)
         
         # Try to convert back to numeric if possible
         df[req.column_name] = pd.to_numeric(df[req.column_name], errors='ignore')
         
         # Save back to store and disk
+        update_project_data(project_id, session_id, df)
         
         return {"success": True, "message": "성공적으로 변환되었습니다."}
     except Exception as e:
@@ -249,6 +252,7 @@ async def drop_data_values(req: DropValuesRequest, session_id: str = Depends(get
         new_len = len(df)
         
         # Save back to store and disk
+        update_project_data(project_id, session_id, df)
         
         return {
             "success": True, 
@@ -280,6 +284,7 @@ async def update_cell(req: UpdateCellRequest, session_id: str = Depends(get_sess
         df.at[req.row_id, req.column_name] = req.new_value
         
         # Save back to store and disk
+        update_project_data(project_id, session_id, df)
         
         return {"success": True, "message": "셀이 성공적으로 수정되었습니다."}
     except Exception as e:
@@ -305,6 +310,7 @@ async def reverse_code(req: ReverseCodeRequest, session_id: str = Depends(get_se
             df[col] = (req.max_val + req.min_val) - df[col]
             
         # Save back to store and disk
+        update_project_data(project_id, session_id, df)
         
         return {"success": True, "message": "성공적으로 역코딩되었습니다."}
     except Exception as e:

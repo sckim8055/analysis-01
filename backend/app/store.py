@@ -26,3 +26,7 @@ def set_project_data(project_id: str, session_id: str, df: pd.DataFrame, filenam
     store[key]["original_df"] = df.copy()
     store[key]["filename"] = filename
 
+def update_project_data(project_id: str, session_id: str, df: pd.DataFrame):
+    key = get_store_key(project_id, session_id)
+    if key in store:
+        store[key]["df"] = df
