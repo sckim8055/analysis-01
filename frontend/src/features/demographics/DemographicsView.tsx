@@ -159,6 +159,27 @@ export const DemographicsView: React.FC = () => {
     }
   };
 
+  const handleDownloadExcel = async () => {
+    try {
+      const res = await apiFetch('/api/data/download', {
+        method: 'GET',
+      });
+      if (!res.ok) throw new Error('다운로드 실패');
+      
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = "cleansed_data.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('엑셀 다운로드 중 오류가 발생했습니다.');
+      console.error(err);
+    }
+  };
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, width: '100%', minHeight: '700px', minWidth: '1000px', padding: '24px' }}>
       
@@ -172,14 +193,13 @@ export const DemographicsView: React.FC = () => {
           </span>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
-          <a 
-            href={`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/data/download`} 
-            download="cleansed_data.xlsx"
+          <button 
+            onClick={handleDownloadExcel}
             className="btn-secondary" 
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
           >
             엑셀로 다운로드
-          </a>
+          </button>
           <button 
             className="btn-primary" 
             style={{ display: 'flex', alignItems: 'center', gap: '8px' }}

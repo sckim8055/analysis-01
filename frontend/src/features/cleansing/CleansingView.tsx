@@ -114,6 +114,28 @@ export const CleansingView: React.FC = () => {
     setCurrentStep('demographics');
   };
 
+  const handleDownloadExcel = async () => {
+    try {
+      const res = await apiFetch('/api/data/download', {
+        method: 'GET',
+      });
+      if (!res.ok) throw new Error('다운로드 실패');
+      
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = "cleansed_data.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('엑셀 다운로드 중 오류가 발생했습니다.');
+      console.error(err);
+    }
+  };
+
   const handleApplyRecode = async () => {
     const mappings: Record<string, any> = {};
     Object.entries(recodeMap).forEach(([k, v]) => {
@@ -304,14 +326,13 @@ export const CleansingView: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', gap: '12px' }}>
-          <a 
-            href={`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/data/download`} 
-            download="cleansed_data.xlsx"
+          <button 
+            onClick={handleDownloadExcel}
             className="btn-secondary" 
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
           >
             엑셀로 다운로드
-          </a>
+          </button>
           <button className="btn-primary" onClick={handleCompleteCleansing} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <CheckSquare size={18} /> 클린징 완료 (인구통계 사전 처리로 이동) ▶
           </button>
