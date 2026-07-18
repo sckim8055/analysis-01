@@ -36,7 +36,8 @@ export const CorrelationView: React.FC = () => {
     Object.entries(mappedVars).forEach(([role, vars]) => {
       if (role === 'gen') return;
       vars.forEach(v => {
-        const isApproved = approvedVariables.includes(v.id);
+        if (!approvedVariables.includes(v.id)) return;
+
         const res = factorResults[v.id];
         const survivedMap: Record<string, string> = {};
         if (res && res.matrixItems) {
@@ -49,8 +50,8 @@ export const CorrelationView: React.FC = () => {
 
         if (targetSubFactors && targetSubFactors.length > 0) {
           targetSubFactors.forEach((sf: any) => {
-            const finalCols = (sf.itemIds || []).filter((id: string) => res ? survivedMap[id] : true);
-            const finalNames = finalCols.map((id: string) => res ? survivedMap[id] : id);
+            const finalCols = (sf.itemIds || []).filter((id: string) => survivedMap[id]);
+            const finalNames = finalCols.map((id: string) => survivedMap[id]);
             if (finalNames.length >= 1) {
               payload.push({
                 name: sf.name,
@@ -60,8 +61,8 @@ export const CorrelationView: React.FC = () => {
             }
           });
         } else {
-          const finalCols = (v.itemIds || []).filter(id => res ? survivedMap[id] : true);
-          const finalNames = finalCols.map(id => res ? survivedMap[id] : id);
+          const finalCols = (v.itemIds || []).filter(id => survivedMap[id]);
+          const finalNames = finalCols.map(id => survivedMap[id]);
           if (finalNames.length >= 1) {
             payload.push({
               name: v.name,

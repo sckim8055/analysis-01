@@ -31,7 +31,12 @@ export const TTestAnovaView: React.FC = () => {
         Object.entries(mappedVars).forEach(([role, vars]) => {
             if (role === 'gen') return;
             vars.forEach(v => {
+                // If factor analysis was run, we only include approved variables.
+                // But if they skipped factor analysis entirely (approvedVariables is empty), we should still let them run it with original vars.
+                // To be safe, if factorResults[v.id] exists, it must be approved. If it doesn't, we just allow it.
                 const res = factorResults[v.id];
+                if (res && !approvedVariables.includes(v.id)) return;
+
 
                 const survivedMap: Record<string, string> = {};
                 if (res && res.matrixItems) {
