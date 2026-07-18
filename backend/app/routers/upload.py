@@ -280,8 +280,16 @@ async def update_cell(req: UpdateCellRequest, session_id: str = Depends(get_sess
         if req.row_id not in df.index:
             raise HTTPException(status_code=400, detail="존재하지 않는 행입니다.")
             
+        # Attempt to cast new_value to numeric if it's a string, so we don't corrupt the column dtype
+        new_val = req.new_value
+        if isinstance(new_val, str) and new_val.strip():
+            try:
+                new_val = float(new_val) if '.' in new_val else int(new_val)
+            except ValueError:
+                pass
+                
         # Update value
-        df.at[req.row_id, req.column_name] = req.new_value
+        df.at[req.row_id, req.column_name] = new_val
         
         # Save back to store and disk
         update_project_data(project_id, session_id, df)
