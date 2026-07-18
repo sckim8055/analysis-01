@@ -25,8 +25,7 @@ export const ReliabilityView: React.FC = () => {
     Object.entries(mappedVars).forEach(([role, vars]) => {
       if (role === 'gen') return;
       vars.forEach(v => {
-        // If this variable wasn't approved in Factor Analysis, skip it
-        if (!approvedVariables.includes(v.id)) return;
+        // Allow variables even if they weren't approved in Factor Analysis
 
         const res = factorResults[v.id];
 
@@ -44,16 +43,17 @@ export const ReliabilityView: React.FC = () => {
         if (targetSubFactors && targetSubFactors.length > 0) {
           // Has sub-factors
           targetSubFactors.forEach((sf: any) => {
-            const finalCols = (sf.itemIds || []).filter((id: string) => survivedMap[id]);
-            const finalNames = finalCols.map((id: string) => survivedMap[id]);
+            const finalCols = (sf.itemIds || []).filter((id: string) => res ? survivedMap[id] : true);
+            const finalNames = finalCols.map((id: string) => res ? survivedMap[id] : id);
 
             if (finalNames.length >= 2) {
               factorsPayload.push({
-                name: sf.id, // Use ID as unique key for backend
-                items: finalNames
+                name: sf.name, 
+                items: finalNames,
+                isFactor: true
               });
 
-              mappingInfo[sf.id] = {
+              mappingInfo[sf.name] = {
                 group: `[${roleMap[role] || role}] ${v.name}`,
                 concept: sf.name,
                 initialCount: sf.originalItemIds?.length || sf.itemIds?.length || 0,
@@ -63,16 +63,17 @@ export const ReliabilityView: React.FC = () => {
           });
         } else {
           // No sub-factors, use the variable itself
-          const finalCols = (v.itemIds || []).filter(id => survivedMap[id]);
-          const finalNames = finalCols.map(id => survivedMap[id]);
+          const finalCols = (v.itemIds || []).filter(id => res ? survivedMap[id] : true);
+          const finalNames = finalCols.map(id => res ? survivedMap[id] : id);
 
           if (finalNames.length >= 2) {
             factorsPayload.push({
-              name: v.id,
-              items: finalNames
+              name: v.name,
+              items: finalNames,
+              isFactor: true
             });
 
-            mappingInfo[v.id] = {
+            mappingInfo[v.name] = {
               group: `[${roleMap[role] || role}] ${v.name}`,
               concept: v.name,
               initialCount: v.itemIds?.length || 0,

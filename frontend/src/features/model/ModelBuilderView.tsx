@@ -62,8 +62,6 @@ export const ModelBuilderView: React.FC = () => {
       let currentY = startY;
 
       vars.forEach(v => {
-        if (!approvedVariables.includes(v.id)) return;
-
         const res = factorResults?.[v.id];
         const finalSubFactors = res?.extractedSubFactors || v.subFactors;
 
@@ -748,7 +746,7 @@ export const ModelBuilderView: React.FC = () => {
           <div style={{ flex: 1, overflowY: 'auto', overflowX: 'auto', padding: '12px' }}>
             {['iv', 'dv', 'med', 'mod'].map((type) => {
               const vars = mappedVars[type as keyof typeof mappedVars] || [];
-              const approvedVarsOfType = vars.filter(v => approvedVariables.includes(v.id));
+              const approvedVarsOfType = vars;
               if (approvedVarsOfType.length === 0) return null;
               
               let typeName = '';

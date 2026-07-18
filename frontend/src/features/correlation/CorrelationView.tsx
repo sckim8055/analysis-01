@@ -16,6 +16,7 @@ export const CorrelationView: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [factorsPayload, setFactorsPayload] = useState<any[]>([]);
+  const [errorMsg, setErrorMsg] = useState<string>('');
 
   useEffect(() => {
     const payload: any[] = [];
@@ -35,8 +36,7 @@ export const CorrelationView: React.FC = () => {
     Object.entries(mappedVars).forEach(([role, vars]) => {
       if (role === 'gen') return;
       vars.forEach(v => {
-        if (!approvedVariables.includes(v.id)) return;
-
+        const isApproved = approvedVariables.includes(v.id);
         const res = factorResults[v.id];
         const survivedMap: Record<string, string> = {};
         if (res && res.matrixItems) {
@@ -49,8 +49,8 @@ export const CorrelationView: React.FC = () => {
 
         if (targetSubFactors && targetSubFactors.length > 0) {
           targetSubFactors.forEach((sf: any) => {
-            const finalCols = (sf.itemIds || []).filter((id: string) => survivedMap[id]);
-            const finalNames = finalCols.map((id: string) => survivedMap[id]);
+            const finalCols = (sf.itemIds || []).filter((id: string) => res ? survivedMap[id] : true);
+            const finalNames = finalCols.map((id: string) => res ? survivedMap[id] : id);
             if (finalNames.length >= 1) {
               payload.push({
                 name: sf.name,
@@ -60,8 +60,8 @@ export const CorrelationView: React.FC = () => {
             }
           });
         } else {
-          const finalCols = (v.itemIds || []).filter(id => survivedMap[id]);
-          const finalNames = finalCols.map(id => survivedMap[id]);
+          const finalCols = (v.itemIds || []).filter(id => res ? survivedMap[id] : true);
+          const finalNames = finalCols.map(id => res ? survivedMap[id] : id);
           if (finalNames.length >= 1) {
             payload.push({
               name: v.name,
@@ -85,11 +85,16 @@ export const CorrelationView: React.FC = () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ factors: payload.map(p => ({ name: p.name, items: p.items })) })
         });
-        if (!res.ok) throw new Error('API Error');
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || 'API Error');
+        }
         const data = await res.json();
         setResults(data);
-      } catch (err) {
+        setErrorMsg('');
+      } catch (err: any) {
         console.error(err);
+        setErrorMsg(err.message || '상관관계 분석 중 오류가 발생했습니다.');
       } finally {
         setLoading(false);
       }
@@ -206,6 +211,7 @@ export const CorrelationView: React.FC = () => {
   }, [results]);
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>상관관계 분석 중...</div>;
+  if (errorMsg) return <div style={{ padding: '40px', textAlign: 'center', color: '#ef4444' }}>{errorMsg}</div>;
   if (!results || results.factor_names.length < 2) return <div style={{ padding: '40px', textAlign: 'center' }}>분석 대상 데이터가 충분하지 않습니다. (요인 2개 이상 필요)</div>;
 
   const names = results.factor_names;

@@ -19,15 +19,13 @@ export const RegressionView: React.FC = () => {
 
     // 1. Extract valid mapped variables
     const getValidVars = (vars: any[]) => {
-        const vList = vars || [];
-        if (approvedVariables.length === 0) return vList;
-        return vList.filter(v => approvedVariables.includes(v.id));
+        return vars || [];
     };
 
-    const validIvs = React.useMemo(() => getValidVars(mappedVars.iv), [mappedVars.iv, approvedVariables]);
-    const validDvs = React.useMemo(() => getValidVars(mappedVars.dv), [mappedVars.dv, approvedVariables]);
-    const validMeds = React.useMemo(() => getValidVars(mappedVars.med), [mappedVars.med, approvedVariables]);
-    const validMods = React.useMemo(() => getValidVars(mappedVars.mod), [mappedVars.mod, approvedVariables]);
+    const validIvs = React.useMemo(() => getValidVars(mappedVars.iv), [mappedVars.iv]);
+    const validDvs = React.useMemo(() => getValidVars(mappedVars.dv), [mappedVars.dv]);
+    const validMeds = React.useMemo(() => getValidVars(mappedVars.med), [mappedVars.med]);
+    const validMods = React.useMemo(() => getValidVars(mappedVars.mod), [mappedVars.mod]);
 
     // 2. Generate Tabs (Pairs of paths)
     const tabs = React.useMemo(() => {
