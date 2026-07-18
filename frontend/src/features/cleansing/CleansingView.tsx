@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
+import { useReactTable, getCoreRowModel, getPaginationRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
 import { useUiStore } from '../../store/uiStore';
 import { useProjectStore } from '../../store/projectStore';
 import { useAnalysisStore } from '../../store/analysisStore';
@@ -43,14 +43,18 @@ export const CleansingView: React.FC = () => {
         return res.json();
       })
       .then(resData => {
-        const cols: ColumnDef<any>[] = resData.columns.map((colName: string) => ({
-          accessorKey: colName,
-          header: colName,
-          size: colName === 'id' ? 80 : 120,
-          cell: EditableCell
-        }));
-
-        setColumns(cols);
+        setColumns(prev => {
+          if (prev.length === resData.columns.length && prev.every((c: any, i: number) => c.accessorKey === resData.columns[i])) {
+            return prev;
+          }
+          return resData.columns.map((colName: string) => ({
+            accessorKey: colName,
+            header: colName,
+            size: colName === 'id' ? 80 : 120,
+            cell: EditableCell
+          }));
+        });
+        
         setAbnormalCount(resData.abnormal_count || 0);
         setData(resData.data);
 
@@ -227,15 +231,22 @@ export const CleansingView: React.FC = () => {
 
 
   // For missing tab, filter rows that have any empty/NaN values
-  const displayData = activeTab === 'missing' 
-    ? data.filter(row => Object.values(row).some(v => v === null || v === ''))
-    : data;
+  const displayData = React.useMemo(() => {
+    return activeTab === 'missing' 
+      ? data.filter(row => Object.values(row).some(v => v === null || v === ''))
+      : data;
+  }, [data, activeTab]);
     
   const table = useReactTable({
     data: displayData,
     columns,
-
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 50,
+      }
+    },
     meta: {
       updateData,
     },
@@ -358,30 +369,41 @@ export const CleansingView: React.FC = () => {
                   <p>결측치나 범위를 벗어난 이상치가 발견되지 않았습니다.</p>
                 </div>
               ) : (
-                <table style={{ width: 'max-content', borderCollapse: 'collapse', textAlign: 'left' }}>
-                  <thead style={{ position: 'sticky', top: 0, backgroundColor: 'var(--bg-surface)', backdropFilter: 'blur(8px)', borderBottom: '1px solid var(--border-color)', zIndex: 1 }}>
-                    {table.getHeaderGroups().map(headerGroup => (
-                      <tr key={headerGroup.id}>
-                        {headerGroup.headers.map(header => (
-                          <th key={header.id} style={{ padding: '12px', fontWeight: '500', color: 'var(--text-secondary)', borderRight: '1px solid var(--border-color)', minWidth: header.getSize(), whiteSpace: 'nowrap' }}>
-                            {flexRender(header.column.columnDef.header, header.getContext())}
-                          </th>
+                <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                  <div style={{ flex: 1, overflow: 'auto' }}>
+                    <table style={{ width: 'max-content', borderCollapse: 'collapse', textAlign: 'left' }}>
+                      <thead style={{ position: 'sticky', top: 0, backgroundColor: 'var(--bg-surface)', backdropFilter: 'blur(8px)', borderBottom: '1px solid var(--border-color)', zIndex: 1 }}>
+                        {table.getHeaderGroups().map(headerGroup => (
+                          <tr key={headerGroup.id}>
+                            {headerGroup.headers.map(header => (
+                              <th key={header.id} style={{ padding: '12px', fontWeight: '500', color: 'var(--text-secondary)', borderRight: '1px solid var(--border-color)', minWidth: header.getSize(), whiteSpace: 'nowrap' }}>
+                                {flexRender(header.column.columnDef.header, header.getContext())}
+                              </th>
+                            ))}
+                          </tr>
                         ))}
-                      </tr>
-                    ))}
-                  </thead>
-                  <tbody>
-                    {table.getRowModel().rows.map(row => (
-                      <tr key={row.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                        {row.getVisibleCells().map(cell => (
-                          <td key={cell.id} style={{ padding: '8px', borderRight: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                          </td>
+                      </thead>
+                      <tbody>
+                        {table.getRowModel().rows.map(row => (
+                          <tr key={row.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                            {row.getVisibleCells().map(cell => (
+                              <td key={cell.id} style={{ padding: '8px', borderRight: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>
+                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                              </td>
+                            ))}
+                          </tr>
                         ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                  </table>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div style={{ padding: '12px', display: 'flex', justifyContent: 'center', gap: '8px', borderTop: '1px solid var(--border-color)', backgroundColor: 'var(--bg-surface)' }}>
+                    <button className="btn-secondary" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()} style={{ padding: '6px 12px' }}>이전</button>
+                    <span style={{ display: 'flex', alignItems: 'center', fontSize: '14px', margin: '0 12px' }}>
+                      {table.getState().pagination.pageIndex + 1} / {table.getPageCount() || 1} 페이지
+                    </span>
+                    <button className="btn-secondary" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()} style={{ padding: '6px 12px' }}>다음</button>
+                  </div>
+                </div>
               )}
             </div>
           </div>
