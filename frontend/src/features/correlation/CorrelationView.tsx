@@ -317,7 +317,8 @@ export const CorrelationView: React.FC = () => {
 
                         return (
                           <td key={j} style={{ padding: '10px', borderRight, borderBottom, borderTop, borderLeft, backgroundColor: isSig ? 'rgba(59, 130, 246, 0.15)' : 'var(--bg-base)' }}>
-                            {r.toFixed(3).replace(/^(-?)0\./, '$1.')}{stars}
+                            {r !== null ? r.toFixed(3).replace(/^(-?)0\./, '$1.') : '-'}
+                            {r !== null ? stars : ''}
                           </td>
                         );
                       } else {

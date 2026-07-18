@@ -432,7 +432,7 @@ class CorrelationRequest(BaseModel):
 
 class CorrelationResponse(BaseModel):
     factor_names: List[str]
-    matrix_r: List[List[float]]
+    matrix_r: List[List[Optional[float]]]
     matrix_p: List[List[Optional[float]]]
     matrix_n: List[List[int]]
 
